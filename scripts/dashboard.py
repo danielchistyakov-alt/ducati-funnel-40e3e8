@@ -238,6 +238,11 @@ def build(data: dict) -> str:
             tpl, n = re.subn(rf'<section id="{sec}">.*?</section>', "", tpl, flags=re.S)
             if not n:
                 sys.exit(f"В шаблоне нет секции {sec} — клиентская версия собралась бы с ней.")
+        # И код, который их наполняет: в нём тексты подсказок и команды сборки
+        tpl, n = re.subn(r"/\*__ВНУТРЕННЕЕ__\*/.*?/\*__/ВНУТРЕННЕЕ__\*/",
+                         "function renderInsights(){}\nfunction renderMeta(){}", tpl, flags=re.S)
+        if not n:
+            sys.exit("В шаблоне нет меток /*__ВНУТРЕННЕЕ__*/ — служебный код уехал бы клиенту.")
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     # </script> внутри данных разорвал бы тег — экранируем на всякий случай
     payload = payload.replace("</", "<\\/")

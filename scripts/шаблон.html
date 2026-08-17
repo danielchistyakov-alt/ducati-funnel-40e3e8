@@ -930,6 +930,10 @@ function renderGoals(cur, byCh){
   });
 }
 
+/*__ВНУТРЕННЕЕ__*/
+/* Всё до закрывающей метки — только для своей версии дашборда. В клиентской сборке
+   этот кусок заменяется заглушками: наружу не должны уходить ни подсказки, ни служебный подвал. */
+
 /* ─── диагностика ─────────────────────────────────────────────────────────── */
 function renderInsights(cur, byCh, camps){
   const box = document.getElementById('insights');
@@ -1039,6 +1043,7 @@ function renderMeta(){
       <p>Данные собраны за <span class="num">${ruFull(DATA.meta.from)} — ${ruFull(DATA.meta.to)}</span>,
       выгрузка <span class="num">${esc(DATA.meta.generated)}</span>.</p></div>`;
 }
+/*__/ВНУТРЕННЕЕ__*/
 
 /* ─── сборка ──────────────────────────────────────────────────────────────── */
 function render(){
