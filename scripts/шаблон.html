@@ -648,15 +648,8 @@ function renderPlan(cur){
   const left = Math.max(0, total - gone);
   const forecast = spent + pace * left;
 
-  let pill = {cls:'ok', text:'идём в план'};
-  if (forecast > budget * 1.05) {
-    const daysToZero = pace ? Math.floor((budget - spent) / pace) : 0;
-    const end = shiftDays(last, daysToZero);
-    pill = {cls:'crit', text:`бюджет кончится ${ruFull(end)}`};
-  } else if (forecast < budget * 0.9) {
-    pill = {cls:'warn', text:`недоберём ${n0((1 - forecast / budget) * 100)} % бюджета`};
-  }
-
+  // Метку со статусом темпа не выводим: прогноз к концу периода говорит то же самое,
+  // но без окраски в тревогу — решение от 17.08.
   const cpa = cur.goals ? cur.cost / cur.goals : 0;
   const target = p.cpa;
   const cpaPill = !target || !cpa ? null
@@ -674,7 +667,6 @@ function renderPlan(cur){
       <b>прошло ${gone} из ${total} ${plDayOf(total)}</b></div>
     <div class="row"><span>темп ${money(pace)} в день</span>
       <b>к ${ruFull(p.to)} ≈ ${money(forecast)}</b></div>
-    <div><span class="pill ${pill.cls}">${pill.text}</span></div>
     ${chs.length > 1 ? `<div class="split">` + chs.map(c => {
       const s = spentBy(c.key), b = p.budget[c.key];
       return `<div class="ch">
