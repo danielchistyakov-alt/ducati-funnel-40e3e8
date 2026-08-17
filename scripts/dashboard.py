@@ -38,6 +38,17 @@ OUTPUT = ROOT / "Отчёты" / "Дашборд" / "Дашборд — воро
 
 START = "2026-08-01"  # раньше этой даты трафика на сайте не было
 
+# Дашборд везде показывает суммы БЕЗ НДС. Кабинеты отдают расход в разной базе:
+# «с НДС» — делим на 1 + ставка, «без НДС» — берём как есть.
+VAT_RATE = 0.22
+COST_BASE = {
+    "direct": "без НДС",   # у API Директа запрашиваем IncludeVAT: NO — он сам считает
+    "avito": "с НДС",      # в спецификации Авито все денежные поля описаны «с НДС»
+    "vk": "без НДС",       # предположение: в кабинете ВК суммы без НДС. Сверить с актом eLama
+}
+PLAN_FILE = "план.json"    # плановые бюджеты и ориентиры, правится руками
+NOTE_FILE = "резюме.md"    # ручная приписка «что меняем», попадает в блок «Коротко»
+
 # utm_campaign Авито → имя кампании в кабинете. Разметку ставим руками, поэтому
 # соответствие тоже руками; всё несопоставленное дашборд покажет отдельной строкой.
 AVITO_UTM = {"moto": "мотолюбители", "moto_kw": "мотолюбители - ключи"}
@@ -74,6 +85,48 @@ def f(x) -> float:
         return float(x or 0)
     except (TypeError, ValueError):
         return 0.0
+
+
+def net(cost: float, channel: str) -> float:
+    """Расход без НДС. Единая база — иначе каналы несравнимы, а итог не сходится со счётом."""
+    return cost / (1 + VAT_RATE) if COST_BASE.get(channel) == "с НДС" else cost
+
+
+def near(name: str) -> Path:
+    """Файл настроек: в проекте лежит в папке дашборда, в репозитории публикации — у скрипта."""
+    return next((c for c in (ROOT / "Отчёты" / "Дашборд" / name, SCRIPTS / name) if c.exists()),
+                ROOT / "Отчёты" / "Дашборд" / name)
+
+
+def read_plan() -> dict:
+    """Плановые бюджеты из медиаплана. Приводим к той же базе без НДС, что и факт."""
+    path = near(PLAN_FILE)
+    if not path.exists():
+        return {}
+    p = json.loads(path.read_text(encoding="utf-8"))
+    div = (1 + VAT_RATE) if p.get("основа сумм") == "с НДС" else 1
+    money = lambda v: round(v / div) if isinstance(v, (int, float)) else None
+    return {
+        "from": p.get("период", {}).get("с"), "to": p.get("период", {}).get("по"),
+        "budget": {k: money(v) for k, v in (p.get("бюджет") or {}).items()},
+        "cpa": money(p.get("ориентир цены перехода")),
+        "source": p.get("основа сумм", "без НДС"),
+    }
+
+
+def read_note() -> dict:
+    """Ручная приписка для клиента: заголовок «# …» и пункты «- …»."""
+    path = near(NOTE_FILE)
+    if not path.exists():
+        return {}
+    title, items = "Что меняем", []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("#"):
+            title = line.lstrip("#").strip()
+        elif line.startswith(("- ", "* ")):
+            items.append(line[2:].strip())
+    return {"title": title, "items": items} if items else {}
 
 
 # ─────────────────────────────  Метрика: что было после клика  ─────────────────
@@ -138,7 +191,7 @@ def metrika_data(d1: str, d2: str) -> dict:
 def direct_rows(d1: str, d2: str) -> list:
     d = load("direct")
     fields = ["Date", "CampaignName", "AdNetworkType", "Impressions", "Clicks", "Cost"]
-    tsv = d.fetch(d1, d2, fields)
+    tsv = d.fetch(d1, d2, fields, vat=False)   # в дашборде все суммы без НДС
     lines = [r.split("\t") for r in tsv.strip().splitlines() if r.strip()]
     if len(lines) < 2:
         return []
@@ -149,7 +202,8 @@ def direct_rows(d1: str, d2: str) -> list:
         name = r[i["CampaignName"]]
         out.append({"d": r[i["Date"]], "ch": "direct", "camp": re.sub(r"\s+", " ", name.replace("\xa0", " ")).strip(),
                     "key": norm(name), "net": "поиск" if r[i["AdNetworkType"]] == "SEARCH" else "сети",
-                    "imp": f(r[i["Impressions"]]), "clicks": f(r[i["Clicks"]]), "cost": f(r[i["Cost"]])})
+                    "imp": f(r[i["Impressions"]]), "clicks": f(r[i["Clicks"]]),
+                    "cost": net(f(r[i["Cost"]]), "direct")})
     return out
 
 
@@ -163,7 +217,7 @@ def avito_rows(d1: str, d2: str) -> list:
         for day in st.get("data", []):
             out.append({"d": (day.get("timestamp") or "")[:10], "ch": "avito", "camp": name,
                         "key": norm(name), "net": "", "imp": f(day.get("views")),
-                        "clicks": f(day.get("clicks")), "cost": a.money(day)})
+                        "clicks": f(day.get("clicks")), "cost": net(a.money(day), "avito")})
     return out
 
 
@@ -184,7 +238,7 @@ def vk_rows(d1: str, d2: str) -> list:
                 continue
             out.append({"d": row.get("date", ""), "ch": "vk", "camp": names.get(gid, gid),
                         "key": gid, "net": "", "imp": f(b.get("shows")),
-                        "clicks": f(b.get("clicks")), "cost": f(b.get("spent"))})
+                        "clicks": f(b.get("clicks")), "cost": net(f(b.get("spent")), "vk")})
     return out
 
 
@@ -215,11 +269,14 @@ def collect(d1: str, d2: str, client: bool = False) -> dict:
             "generated": datetime.now().strftime("%d.%m.%Y %H:%M"),
             "from": dates[0] if dates else d1, "to": dates[-1] if dates else d2,
             "counter": "111262520", "site": "ducatiparfum.ru", "notes": notes,
+            "vat": {"rate": round(VAT_RATE * 100), "base": COST_BASE},
             # Клиентская сборка: без блока подсказок «что требует внимания» и без
             # служебного подвала — это внутренняя кухня, наружу её не показываем.
             "client": client,
         },
         "channels": CHANNELS,
+        "plan": read_plan(),
+        "note": read_note(),
         "goals": met["goals"],
         "days": met["days"],
         "site": met["site"],

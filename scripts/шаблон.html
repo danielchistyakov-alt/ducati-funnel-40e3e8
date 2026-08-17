@@ -111,6 +111,40 @@ section{margin-bottom:26px}
 .eyebrow .hint{text-transform:none; letter-spacing:0; font-size:12px; color:var(--ink-3)}
 .num{font-family:var(--mono); font-variant-numeric:tabular-nums}
 
+/* ─── коротко и бюджет ───────────────────────────────────────────────────── */
+.summary-grid{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr); gap:12px}
+.sum{padding:18px 22px 16px; display:flex; flex-direction:column; gap:13px}
+.sum p{margin:0; font-size:15.5px; line-height:1.62; max-width:68ch}
+.sum p b{font-weight:600}
+.sum-note{border-top:1px solid var(--line); padding-top:12px}
+.sum-note h3{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+  margin-bottom:7px; font-weight:600}
+.sum-note ul{margin:0; padding-left:17px; font-size:14px; line-height:1.5; color:var(--ink-2)}
+.sum-note li{margin-bottom:5px}
+.sum-cap{font-size:11.5px; color:var(--ink-3); margin-top:auto; padding-top:4px}
+.plan{padding:16px 18px 14px; display:flex; flex-direction:column; gap:9px}
+.plan h3{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.plan .big{font-family:var(--mono); font-size:21px; letter-spacing:-.02em; line-height:1.2}
+.plan .big span{font-size:13px; color:var(--ink-3)}
+.meter{position:relative; height:11px; border-radius:6px; background:var(--surface-3); overflow:hidden}
+.meter i{display:block; height:100%; border-radius:6px 0 0 6px}
+.meter u{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink-3); opacity:.75}
+.plan .row{display:flex; justify-content:space-between; gap:12px; font-size:12.5px; color:var(--ink-2)}
+.plan .row b{font-family:var(--mono); font-weight:500; color:var(--ink)}
+.plan .split{border-top:1px solid var(--line); padding-top:9px; display:flex;
+  flex-direction:column; gap:6px}
+.plan .ch{display:grid; grid-template-columns:74px minmax(0,1fr) auto; gap:8px; align-items:center;
+  font-size:12px; color:var(--ink-2)}
+.plan .ch .nm{display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden}
+.plan .ch .nm i{width:8px; height:8px; border-radius:2px; flex:none}
+.plan .ch .rt{font-family:var(--mono); color:var(--ink-2); white-space:nowrap}
+.pill{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+  padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2);
+  color:var(--ink-2); letter-spacing:.02em}
+.pill.ok{color:var(--ok); background:var(--ok-bg); border-color:transparent}
+.pill.warn{color:var(--warn); background:var(--warn-bg); border-color:transparent}
+.pill.crit{color:var(--crit); background:var(--crit-bg); border-color:transparent}
+
 /* ─── KPI ────────────────────────────────────────────────────────────────── */
 .kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:12px}
 .kpi{padding:13px 14px 10px; display:flex; flex-direction:column; gap:2px; min-width:0}
@@ -272,6 +306,15 @@ svg{display:block; overflow:visible}
 </div>
 
 <div class="wrap">
+
+  <section id="sec-summary">
+    <div class="eyebrow"><h2>Коротко</h2>
+      <span class="hint" id="sumhint"></span></div>
+    <div class="summary-grid">
+      <div class="card sum" id="summary"></div>
+      <div class="card plan" id="planbox"></div>
+    </div>
+  </section>
 
   <section>
     <div class="kpis" id="kpis"></div>
@@ -529,6 +572,121 @@ function renderTop(){
   }).join('');
 }
 
+/* ─── коротко: то же, что пишут в сопроводительном письме ─────────────────── */
+const plVisit = v => plural(v, 'визит', 'визита', 'визитов');
+const plGoal = v => plural(v, 'переход', 'перехода', 'переходов');
+const plDay = v => plural(v, 'день', 'дня', 'дней');
+// «из 31 дня», «из 30 дней» — после «из» нужен родительный падеж, а не именительный
+const plDayOf = v => (v % 10 === 1 && v % 100 !== 11) ? 'дня' : 'дней';
+// Одна единица на всю колонку: «5,3 / 107 тыс» читается, «5 346 / 107 тыс» — нет
+const thou = v => (v >= 10000 ? n0(Math.round(v / 1000)) : n1(Math.round(v / 100) / 10));
+
+/** Самая дешёвая кампания периода. Меньше пяти переходов — статистика ещё случайная. */
+function byCpa(camps){
+  return camps.filter(r => !r.mp && r.goals >= 5 && r.cost > 0)
+              .map(r => ({r, cpa: r.cost / r.goals}))
+              .sort((a, b) => a.cpa - b.cpa);
+}
+
+function renderSummary(cur, prev, camps){
+  const days = daysBetween(state.from, state.to);
+  const parts = [];
+
+  parts.push(`С <b>${ruFull(state.from)}</b> по <b>${ruFull(state.to)}</b> потратили
+    <b>${money(cur.cost + cur.costMp)}</b>, получили <b>${n0(cur.visits)}</b> ${plVisit(cur.visits)}
+    на сайт и <b>${n0(cur.goals)}</b> ${plGoal(cur.goals)} на маркетплейс.`);
+
+  if (prev.goals) {
+    const dg = (cur.goals - prev.goals) / prev.goals * 100;
+    const cpaC = cur.goals ? cur.cost / cur.goals : 0, cpaP = prev.goals ? prev.cost / prev.goals : 0;
+    let s = `Переходов на <b>${n0(Math.abs(dg))} %</b> ${dg >= 0 ? 'больше' : 'меньше'},
+      чем за предыдущие ${days} ${plDay(days)}`;
+    if (cpaC && cpaP) s += `, цена перехода ${cpaC <= cpaP ? 'снизилась' : 'выросла'}
+      с <b>${money2(cpaP)}</b> до <b>${money2(cpaC)}</b>`;
+    parts.push(s + '.');
+  }
+
+  const list = byCpa(camps);
+  if (list.length) {
+    const best = list[0], worst = list[list.length - 1];
+    let s = `Дешевле всего переходы даёт «${esc(best.r.name)}» — <b>${money2(best.cpa)}</b> за переход`;
+    if (list.length > 1 && worst.cpa > best.cpa * 2.5)
+      s += `, дороже всего «${esc(worst.r.name)}» — <b>${money2(worst.cpa)}</b>`;
+    parts.push(s + '.');
+  }
+
+  const note = DATA.note && DATA.note.items && DATA.note.items.length ? DATA.note : null;
+  document.getElementById('summary').innerHTML =
+    parts.map(p => `<p>${p}</p>`).join('') +
+    (note ? `<div class="sum-note"><h3>${esc(note.title)}</h3><ul>` +
+      note.items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul></div>' : '') +
+    `<div class="sum-cap">Все суммы — без НДС${DATA.meta.vat ? ` (ставка ${DATA.meta.vat.rate} %)` : ''}.
+      Воронка заканчивается переходом на маркетплейс: что было дальше, видно только в кабинетах Ozon и WB.</div>`;
+  document.getElementById('sumhint').textContent = 'считается по выбранному периоду и каналам';
+}
+
+/* ─── бюджет и темп ───────────────────────────────────────────────────────── */
+function renderPlan(cur){
+  const box = document.getElementById('planbox');
+  const p = DATA.plan || {};
+  if (!box) return;
+  if (!p.from || !p.budget) { box.remove();
+    document.querySelector('.summary-grid').style.gridTemplateColumns = '1fr'; return; }
+
+  const chs = DATA.channels.filter(c => state.ch.has(c.key) && p.budget[c.key] != null);
+  const budget = chs.reduce((s, c) => s + p.budget[c.key], 0) || p.budget['всего'] || 0;
+  const last = D1 < p.to ? D1 : p.to;            // последний день, за который есть данные
+  const spentBy = k => DATA.ads.reduce((s, r) =>
+    s + (r.ch === k && inRange(r.d, p.from, last) ? r.cost : 0), 0);
+  const spent = chs.reduce((s, c) => s + spentBy(c.key), 0);
+
+  const total = daysBetween(p.from, p.to), gone = daysBetween(p.from, last);
+  const tail = ALLDATES.filter(d => inRange(d, p.from, last)).slice(-7);
+  const pace = tail.length
+    ? DATA.ads.reduce((s, r) => s + (state.ch.has(r.ch) && tail.includes(r.d) ? r.cost : 0), 0) / tail.length
+    : 0;
+  const left = Math.max(0, total - gone);
+  const forecast = spent + pace * left;
+
+  let pill = {cls:'ok', text:'идём в план'};
+  if (forecast > budget * 1.05) {
+    const daysToZero = pace ? Math.floor((budget - spent) / pace) : 0;
+    const end = shiftDays(last, daysToZero);
+    pill = {cls:'crit', text:`бюджет кончится ${ruFull(end)}`};
+  } else if (forecast < budget * 0.9) {
+    pill = {cls:'warn', text:`недоберём ${n0((1 - forecast / budget) * 100)} % бюджета`};
+  }
+
+  const cpa = cur.goals ? cur.cost / cur.goals : 0;
+  const target = p.cpa;
+  const cpaPill = !target || !cpa ? null
+    : cpa <= target ? {cls:'ok', text:`ориентир ${money2(target)}`}
+    : {cls:'crit', text:`выше ориентира ${money2(target)}`};
+
+  box.innerHTML = `
+    <h3>Бюджет · ${ruFull(p.from)} — ${ruFull(p.to)}</h3>
+    <div class="big">${money(spent)} <span>из ${money(budget)}</span></div>
+    <div class="meter" title="серая метка — где мы были бы при ровном темпе">
+      <i style="width:${Math.min(100, budget ? spent / budget * 100 : 0).toFixed(1)}%; background:var(--accent)"></i>
+      <u style="left:${Math.min(100, gone / total * 100).toFixed(1)}%"></u>
+    </div>
+    <div class="row"><span>израсходовано ${pct(spent, budget, 0)}</span>
+      <b>прошло ${gone} из ${total} ${plDayOf(total)}</b></div>
+    <div class="row"><span>темп ${money(pace)} в день</span>
+      <b>к ${ruFull(p.to)} ≈ ${money(forecast)}</b></div>
+    <div><span class="pill ${pill.cls}">${pill.text}</span></div>
+    ${chs.length > 1 ? `<div class="split">` + chs.map(c => {
+      const s = spentBy(c.key), b = p.budget[c.key];
+      return `<div class="ch">
+        <div class="nm"><i style="background:var(--ch-${c.key})"></i>${esc(c.short)}</div>
+        <div class="meter" style="height:7px"><i style="width:${Math.min(100, s / b * 100).toFixed(1)}%;
+          background:var(--ch-${c.key})"></i></div>
+        <div class="rt">${thou(s)} / ${thou(b)} тыс ₽</div></div>`;
+    }).join('') + `</div>` : ''}
+    ${cpaPill ? `<div class="split"><div class="row"><span>цена перехода за период</span>
+      <span><b>${money2(cpa)}</b> <span class="pill ${cpaPill.cls}">${cpaPill.text}</span></span></div></div>` : ''}`;
+}
+
 /* ─── KPI ─────────────────────────────────────────────────────────────────── */
 function sparkline(vals, color){
   const w = 120, h = 26, pad = 2;
@@ -559,7 +717,7 @@ function renderKpis(cur, prev, byDay){
   const cpaC = cur.goals ? cur.cost / cur.goals : 0, cpaP = prev.goals ? prev.cost / prev.goals : 0;
   const cpcC = cur.clicks ? cur.cost / cur.clicks : 0, cpcP = prev.clicks ? prev.cost / prev.clicks : 0;
   document.getElementById('kpis').innerHTML = [
-    kpi('Расход', money(cur.cost + cur.costMp),
+    kpi('Расход без НДС', money(cur.cost + cur.costMp),
         cur.costMp ? `из них ${money(cur.costMp)} мимо сайта` : '',
         cur.cost + cur.costMp, prev.cost + prev.costMp, -1, series(a => a.cost + a.costMp)),
     kpi('Клики в рекламе', n0(cur.clicks + cur.clicksMp), '',
@@ -1034,6 +1192,10 @@ function renderMeta(){
       <p style="margin-top:6px">Файл перезаписывается целиком, данные зашиты внутрь — можно пересылать как есть.</p></div>
     <div><h3>Что помнить при чтении</h3>
       <ul>
+        <li>Все суммы приведены к базе <b>без НДС</b> (ставка ${DATA.meta.vat ? DATA.meta.vat.rate : 22} %).
+          Кабинеты отдают расход по-разному: ${DATA.meta.vat ? DATA.channels.filter(c => DATA.meta.vat.base[c.key])
+            .map(c => `${esc(c.short)} — ${DATA.meta.vat.base[c.key]}`).join(', ') : '—'}.
+          База Авито и ВК взята из документации и предположения, сверьте с актами.</li>
         <li>Клики кабинета и визиты Метрики никогда не сходятся: клик считает площадка, визит — счётчик.</li>
         <li>Последний день периода почти всегда неполный.</li>
         <li>Дальше кнопки маркетплейса воронка не видна: заказы живут в кабинетах Ozon и WB.</li>
@@ -1056,6 +1218,8 @@ function render(){
   const byDay = aggBy(state.from, state.to, state.ch, r => r.d, r => r.d);
   const camps = campaigns(state.from, state.to, state.ch);
 
+  renderSummary(cur, prev, camps);
+  renderPlan(cur);
   renderKpis(cur, prev, byDay);
   renderFunnel(cur, byCh);
   renderDayChart();
