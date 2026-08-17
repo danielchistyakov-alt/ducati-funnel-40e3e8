@@ -1,0 +1,1087 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- страница лежит в публичном репозитории: закрываем её от поисковиков -->
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Воронка Ducati Parfums</title>
+<style>
+/* ─── токены ─────────────────────────────────────────────────────────────── */
+:root{
+  color-scheme: light;
+  --bg:#f4f2ef; --surface:#fcfcfb; --surface-2:#efedea; --surface-3:#e7e4e0;
+  --line:#e0ddd7; --line-2:#cdc9c2;
+  --ink:#17150f; --ink-2:#575249; --ink-3:#8b857a;
+  --accent:#c31a20; --on-accent:#fff;
+  --ch-direct:#eb6834; --ch-avito:#1baf7a; --ch-vk:#2a78d6; --ch-other:#9a948a;
+  --warn:#a86400; --crit:#c31a20; --ok:#2c7a5c;
+  --warn-bg:#f6ecd8; --crit-bg:#f7e2e2; --ok-bg:#dff0e7;
+  --shadow:0 1px 2px rgba(23,21,15,.06), 0 8px 24px -16px rgba(23,21,15,.25);
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#121110; --surface:#1a1a19; --surface-2:#232220; --surface-3:#2b2a27;
+    --line:#302e2b; --line-2:#403d39;
+    --ink:#f6f3ee; --ink-2:#b0aaa1; --ink-3:#7d776e;
+    --accent:#ef3b42; --on-accent:#fff;
+    --ch-direct:#d95926; --ch-avito:#199e70; --ch-vk:#3987e5; --ch-other:#7c766d;
+    --warn:#d9a441; --crit:#ef6b6b; --ok:#4fb489;
+    --warn-bg:#2c2519; --crit-bg:#301d1d; --ok-bg:#17281f;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -20px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#121110; --surface:#1a1a19; --surface-2:#232220; --surface-3:#2b2a27;
+  --line:#302e2b; --line-2:#403d39;
+  --ink:#f6f3ee; --ink-2:#b0aaa1; --ink-3:#7d776e;
+  --accent:#ef3b42; --on-accent:#fff;
+  --ch-direct:#d95926; --ch-avito:#199e70; --ch-vk:#3987e5; --ch-other:#7c766d;
+  --warn:#d9a441; --crit:#ef6b6b; --ok:#4fb489;
+  --warn-bg:#2c2519; --crit-bg:#301d1d; --ok-bg:#17281f;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -20px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1360px; margin:0 auto; padding:0 24px 72px}
+h1,h2,h3{margin:0; font-weight:600; text-wrap:balance}
+a{color:inherit}
+button{font:inherit; color:inherit}
+
+/* ─── шапка ──────────────────────────────────────────────────────────────── */
+.top{
+  position:sticky; top:0; z-index:30; background:var(--bg);
+  border-bottom:1px solid var(--line); margin-bottom:28px;
+}
+.top-in{max-width:1360px; margin:0 auto; padding:14px 24px 12px;
+  display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-end}
+.brand{display:flex; align-items:center; gap:12px; margin-right:auto}
+.brand-rail{width:3px; height:38px; background:var(--accent); border-radius:2px}
+.brand h1{font-size:19px; letter-spacing:-.01em}
+.brand .sub{font-size:12px; color:var(--ink-3); font-family:var(--mono)}
+.controls{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center}
+.seg{display:flex; background:var(--surface-2); border:1px solid var(--line);
+  border-radius:8px; padding:2px; gap:2px}
+.seg button{
+  border:0; background:transparent; border-radius:6px; padding:5px 11px;
+  font-size:13px; color:var(--ink-2); cursor:pointer; white-space:nowrap;
+}
+.seg button:hover{background:var(--surface-3); color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); font-weight:600;
+  box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.dates{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-2)}
+.dates input{
+  font:inherit; font-size:13px; font-family:var(--mono); color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:4px 7px;
+}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  border:1px solid var(--line); background:var(--surface); border-radius:999px;
+  padding:5px 12px 5px 9px; font-size:13px; color:var(--ink-3);
+}
+.chip:hover{border-color:var(--line-2); color:var(--ink-2)}
+.chip[aria-pressed="true"]{color:var(--ink); border-color:var(--line-2); background:var(--surface)}
+.chip .dot{width:9px; height:9px; border-radius:3px; background:currentColor; opacity:.35}
+.chip[aria-pressed="true"] .dot{opacity:1}
+.chip .n{font-family:var(--mono); font-size:12px; color:var(--ink-3)}
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible, th[role="button"]:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;
+}
+
+/* ─── общие блоки ────────────────────────────────────────────────────────── */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  box-shadow:var(--shadow)}
+section{margin-bottom:26px}
+.eyebrow{
+  display:flex; align-items:baseline; gap:10px; margin:0 0 12px;
+  font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+}
+.eyebrow h2{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-2)}
+.eyebrow .hint{text-transform:none; letter-spacing:0; font-size:12px; color:var(--ink-3)}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+/* ─── KPI ────────────────────────────────────────────────────────────────── */
+.kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:12px}
+.kpi{padding:13px 14px 10px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.kpi .lbl{font-size:12px; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.kpi .v{font-family:var(--mono); font-size:25px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:14px; color:var(--ink-2); margin-left:2px}
+.kpi .d{font-size:12px; font-family:var(--mono); color:var(--ink-3)}
+.kpi .d b{font-weight:600}
+.kpi .up{color:var(--ok)} .kpi .down{color:var(--crit)} .kpi .flat{color:var(--ink-3)}
+.kpi .spark{margin-top:6px; height:26px}
+.kpi .note{font-size:11px; color:var(--ink-3); margin-top:2px}
+
+/* ─── воронка ────────────────────────────────────────────────────────────── */
+.funnel-grid{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr); gap:12px}
+.funnel{padding:18px 20px 14px}
+.stage{display:grid; grid-template-columns:190px minmax(0,1fr) 120px; gap:16px; align-items:center}
+.stage .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-3)}
+.stage .val{font-family:var(--mono); font-size:26px; letter-spacing:-.02em; line-height:1.15}
+.stage.hero .val{font-size:46px; letter-spacing:-.03em}
+.stage .rt{text-align:right; font-family:var(--mono); font-size:13px; color:var(--ink-2)}
+.stage .rt span{display:block; font-size:11px; color:var(--ink-3); font-family:var(--sans)}
+.link{display:grid; grid-template-columns:190px minmax(0,1fr) 120px; gap:16px; align-items:center;
+  padding:7px 0}
+.link .conv{
+  grid-column:2; display:flex; align-items:center; gap:9px; font-size:12px; color:var(--ink-2);
+}
+.link .conv .arrow{color:var(--ink-3)}
+.link .conv b{font-family:var(--mono); font-weight:600; color:var(--ink)}
+.link .conv .loss{color:var(--ink-3)}
+.branch{
+  margin:10px 0 2px 206px; padding:10px 13px; border-left:2px solid var(--line-2);
+  background:var(--surface-2); border-radius:0 8px 8px 0; font-size:12.5px; color:var(--ink-2);
+}
+.branch b{font-family:var(--mono); color:var(--ink)}
+.side{padding:16px 18px; display:flex; flex-direction:column; gap:14px}
+.side h3{font-size:13px}
+.mini{display:flex; flex-direction:column; gap:6px}
+.mini-row{display:grid; grid-template-columns:96px minmax(0,1fr) 74px; gap:10px; align-items:center;
+  font-size:12px}
+.mini-row .nm{display:flex; align-items:center; gap:6px; color:var(--ink-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mini-row .nm i{width:8px; height:8px; border-radius:2px; flex:none}
+.mini-row .rt{text-align:right; font-family:var(--mono); color:var(--ink-2)}
+
+/* ─── таблицы ────────────────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto; border-radius:var(--r)}
+table{border-collapse:collapse; width:100%; font-size:13.5px}
+th,td{padding:8px 10px; text-align:right; white-space:nowrap;
+  border-bottom:1px solid var(--line)}
+th{font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);
+  font-weight:600; cursor:pointer; user-select:none; position:sticky; top:0; background:var(--surface); z-index:2}
+th:hover{color:var(--ink-2)}
+th.sorted{color:var(--ink)}
+th .car{opacity:.55; font-size:9px; margin-left:3px}
+th:first-child, td:first-child{text-align:left}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+tr.total td{font-weight:600; background:var(--surface-2); border-top:1px solid var(--line-2)}
+tr.grp td{background:var(--surface-2); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600}
+.cellname{display:flex; align-items:center; gap:8px; max-width:340px}
+.cellname i{width:8px; height:8px; border-radius:2px; flex:none}
+.cellname span{overflow:hidden; text-overflow:ellipsis}
+.badge{display:inline-block; font-size:10px; letter-spacing:.04em; text-transform:uppercase;
+  padding:2px 6px; border-radius:5px; background:var(--surface-3); color:var(--ink-3);
+  border:1px solid var(--line); margin-left:6px; vertical-align:1px}
+.badge.mp{background:var(--surface-3); color:var(--ink-2)}
+.dim{color:var(--ink-3)}
+
+/* ─── график по дням ─────────────────────────────────────────────────────── */
+.chart-card{padding:16px 18px 12px}
+.chart-head{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-bottom:10px}
+.chart-head .seg{margin-left:auto}
+.legend{display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--ink-2)}
+.legend i{width:9px; height:9px; border-radius:2px; display:inline-block; margin-right:6px}
+.foot{font-size:11.5px; color:var(--ink-3); margin-top:8px}
+.linkbtn{background:none; border:0; padding:0; color:var(--ink-2); font-size:12px;
+  text-decoration:underline; text-underline-offset:3px; cursor:pointer}
+.linkbtn:hover{color:var(--ink)}
+
+/* ─── диагностика ────────────────────────────────────────────────────────── */
+.insights{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px}
+.ins{padding:13px 15px 13px 14px; border-left:3px solid var(--line-2); display:flex;
+  flex-direction:column; gap:4px}
+.ins.crit{border-left-color:var(--crit); background:var(--crit-bg)}
+.ins.warn{border-left-color:var(--warn); background:var(--warn-bg)}
+.ins.ok{border-left-color:var(--ok); background:var(--ok-bg)}
+.ins .t{font-size:13px; font-weight:600; display:flex; align-items:center; gap:7px}
+.ins .t .sev{font-size:10px; letter-spacing:.06em; text-transform:uppercase; font-weight:700;
+  padding:1px 5px; border-radius:4px; background:var(--surface); border:1px solid var(--line)}
+.ins.crit .t .sev{color:var(--crit)} .ins.warn .t .sev{color:var(--warn)} .ins.ok .t .sev{color:var(--ok)}
+.ins p{margin:0; font-size:12.5px; color:var(--ink-2)}
+.ins .num{color:var(--ink)}
+
+/* ─── подвал ─────────────────────────────────────────────────────────────── */
+.meta{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px;
+  padding:18px 20px; font-size:12.5px; color:var(--ink-2)}
+.meta h3{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+  margin-bottom:7px}
+.meta code{font-family:var(--mono); font-size:11.5px; background:var(--surface-2);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line); word-break:break-all}
+.meta ul{margin:0; padding-left:16px} .meta li{margin-bottom:4px}
+
+/* ─── тултип ─────────────────────────────────────────────────────────────── */
+#tip{
+  position:fixed; z-index:60; pointer-events:none; opacity:0; transform:translate(-50%,-100%);
+  background:var(--surface); border:1px solid var(--line-2); border-radius:8px;
+  box-shadow:var(--shadow); padding:9px 11px; font-size:12.5px; min-width:150px;
+  transition:opacity .1s linear;
+}
+#tip .th{font-weight:600; margin-bottom:5px; font-size:12px}
+#tip .tr{display:flex; align-items:center; gap:8px; justify-content:space-between; gap:14px}
+#tip .tr i{width:8px; height:8px; border-radius:2px; flex:none; margin-right:5px}
+#tip .tr .l{display:flex; align-items:center; color:var(--ink-2)}
+#tip .tr .v{font-family:var(--mono); font-variant-numeric:tabular-nums}
+#tip .tt{border-top:1px solid var(--line); margin-top:5px; padding-top:5px; font-weight:600}
+
+.hidden{display:none !important}
+svg{display:block; overflow:visible}
+.gline{stroke:var(--line); stroke-width:1}
+.axis{fill:var(--ink-3); font-size:11px; font-family:var(--mono)}
+.dlabel{fill:var(--ink-2); font-size:11px; font-family:var(--mono)}
+
+@media (max-width:1180px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .funnel-grid{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .wrap,.top-in{padding-left:14px; padding-right:14px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .stage,.link{grid-template-columns:120px minmax(0,1fr); }
+  .stage .rt{grid-column:2; text-align:left}
+  .branch{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="brand-rail" aria-hidden="true"></div>
+      <div>
+        <h1>Ducati Parfums · воронка трафика</h1>
+        <div class="sub" id="brandsub"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="seg" id="presets" role="group" aria-label="Период"></div>
+      <div class="dates">
+        <input type="date" id="from" aria-label="Начало периода">
+        <span>—</span>
+        <input type="date" id="to" aria-label="Конец периода">
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Каналы"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>Воронка</h2>
+      <span class="hint">полоса — состав шага по каналам, между шагами — конверсия</span></div>
+    <div class="funnel-grid">
+      <div class="card funnel" id="funnel"></div>
+      <div class="card side" id="side"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>По дням</h2><span class="hint" id="dayshint"></span></div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div class="legend" id="daylegend"></div>
+        <div class="seg" id="metrics" role="group" aria-label="Показатель"></div>
+      </div>
+      <div id="daychart"></div>
+      <div class="foot">
+        <button class="linkbtn" id="daytoggle">показать таблицей</button>
+        <span id="dayfoot"></span>
+      </div>
+      <div class="tbl-wrap hidden" id="daytablewrap" style="margin-top:10px"><table id="daytable"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>Каналы</h2><span class="hint">клик по строке — оставить только этот канал</span></div>
+    <div class="card tbl-wrap"><table id="chtable"></table></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>Кампании</h2><span class="hint" id="camphint"></span></div>
+    <div class="card tbl-wrap"><table id="camptable"></table></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>Куда уходят с сайта</h2>
+      <span class="hint">достижения целей Метрики — каждая цель это кнопка на лендинге</span></div>
+    <div class="card chart-card"><div id="goalchart"></div></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><h2>Что требует внимания</h2>
+      <span class="hint">считается по выбранному периоду и каналам</span></div>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <section>
+    <div class="card meta" id="meta"></div>
+  </section>
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const DATA = /*__ДАННЫЕ__*/;
+
+/* ─── справочники ──────────────────────────────────────────────────────────
+   Куда ведёт каждая кнопка лендинга — из карты целей проекта.               */
+const GOAL_DEST = {
+  "Клик - 1 экран":            "Ozon · Ice — кнопка «Купить», первый экран",
+  "Клик - 3 экран":            "Ozon · Ice — кнопка «Купить», третий экран",
+  "Клик - блок выбора парфюма":"Ozon · 1926 / Sport / Ice — блок «Все коллекции»",
+  "Клик - все ароматы на Ozon":"Ozon · подборка бренда",
+  "Клик - Ozon":               "Ozon · подборка, ссылка в футере",
+  "Клик - wildberries":        "Wildberries · карточка",
+  "Клик - Магнит косметик":    "Магнит Косметик · приложение",
+  "Клик - Золотое яблоко":     "Золотое Яблоко · страница бренда",
+};
+const CH = {}; DATA.channels.forEach(c => CH[c.key] = c);
+const CHCOLOR = k => getComputedStyle(document.documentElement).getPropertyValue('--ch-' + k).trim();
+
+/* ─── формат ──────────────────────────────────────────────────────────────── */
+const nf = new Intl.NumberFormat('ru-RU');
+const n0 = v => nf.format(Math.round(v || 0));
+const n1 = v => nf.format(Math.round((v || 0) * 10) / 10);
+const n2 = v => nf.format(Math.round((v || 0) * 100) / 100);
+const money = v => n0(v) + ' ₽';
+const money2 = v => (v >= 100 ? n0(v) : n2(v)) + ' ₽';
+const pct = (a, b, d) => b ? (a / b * 100).toFixed(d === undefined ? 1 : d) + ' %' : '—';
+const dash = (v, f) => v ? f(v) : '—';
+const compact = v => v >= 1e6 ? n1(v / 1e6) + ' млн' : v >= 1e4 ? n0(Math.round(v / 1e3)) + ' тыс' : n0(v);
+/** «в 27 раз», но «в 2,4 раза» — дробное всегда просит родительный падеж. */
+const plural = (v, one, few, many) => {
+  if (Math.round(v) !== v) return few;
+  const n = Math.abs(v) % 100, n1_ = n % 10;
+  return n > 10 && n < 20 ? many : n1_ === 1 ? one : n1_ >= 2 && n1_ <= 4 ? few : many;
+};
+const ru = iso => { const [y, m, d] = iso.split('-'); return d + '.' + m; };
+const ruFull = iso => { const [y, m, d] = iso.split('-'); return d + '.' + m + '.' + y.slice(2); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ─── состояние ───────────────────────────────────────────────────────────── */
+const ALLDATES = [...new Set([...DATA.days.map(r => r.d), ...DATA.ads.map(r => r.d)])].filter(Boolean).sort();
+const D0 = ALLDATES[0], D1 = ALLDATES[ALLDATES.length - 1];
+const state = {
+  from: D0, to: D1,
+  // по умолчанию только платные каналы: дашборд про рекламу, органики тут единицы
+  ch: new Set(DATA.channels.map(c => c.key).filter(k => k !== 'other')),
+  metric: 'cost',
+  sortCamp: {key: 'cost', dir: -1},
+  dayTable: false,
+};
+const inRange = (d, a, b) => d >= a && d <= b;
+const shiftDays = (iso, n) => { const t = new Date(iso + 'T12:00:00'); t.setDate(t.getDate() + n);
+  return t.toISOString().slice(0, 10); };
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5) + 1;
+
+/* ─── агрегация ───────────────────────────────────────────────────────────── */
+const GN = DATA.goals.length;
+const zeroG = () => new Array(GN).fill(0);
+
+function blank(){
+  return {imp:0, clicks:0, cost:0, impMp:0, clicksMp:0, costMp:0,
+          visits:0, users:0, bounceSum:0, durSum:0, g:zeroG(), goals:0};
+}
+function addAds(a, r){
+  if (r.mp) { a.impMp += r.imp; a.clicksMp += r.clicks; a.costMp += r.cost; }
+  else { a.imp += r.imp; a.clicks += r.clicks; a.cost += r.cost; }
+}
+function addSite(a, r){
+  a.visits += r.visits; a.users += (r.users || 0);
+  a.bounceSum += (r.bounce || 0) * r.visits; a.durSum += (r.dur || 0) * r.visits;
+  if (r.g) r.g.forEach((v, i) => { a.g[i] += v; a.goals += v; });
+}
+/** Свод за период. chSet — какие каналы учитывать, by — по чему резать (канал/день/кампания). */
+function agg(from, to, chSet){
+  const a = blank();
+  DATA.ads.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) addAds(a, r); });
+  DATA.days.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) addSite(a, r); });
+  return a;
+}
+function aggBy(from, to, chSet, keyAds, keyDays){
+  const out = new Map();
+  const get = k => { if (!out.has(k)) out.set(k, blank()); return out.get(k); };
+  DATA.ads.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) addAds(get(keyAds(r)), r); });
+  DATA.days.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) addSite(get(keyDays(r)), r); });
+  return out;
+}
+/** Разрез по кампаниям: рекламные метрики из кабинетов, визиты и цели — из Метрики. */
+function campaigns(from, to, chSet){
+  const out = new Map();
+  const get = (ch, key, name) => {
+    const id = ch + '|' + key;
+    if (!out.has(id)) out.set(id, Object.assign(blank(), {ch, key, name: name || key, mp:0, matched:false}));
+    const o = out.get(id); if (name) o.name = name; return o;
+  };
+  DATA.ads.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) {
+    const o = get(r.ch, r.key, r.camp); o.mp = o.mp || r.mp; addAds(o, r);
+  }});
+  DATA.site.forEach(r => { if (chSet.has(r.ch) && inRange(r.d, from, to)) {
+    const known = out.has(r.ch + '|' + r.key);
+    const o = get(r.ch, r.key, null);
+    o.matched = o.matched || known;
+    addSite(o, r);
+  }});
+  return [...out.values()];
+}
+
+/* ─── SVG ─────────────────────────────────────────────────────────────────── */
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){
+  const n = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function svg(w, h, parent){
+  parent.innerHTML = '';
+  return el('svg', {width:'100%', height:h, viewBox:`0 0 ${w} ${h}`, preserveAspectRatio:'none'}, parent);
+}
+/** Прямоугольник со скруглённым «дальним» концом — как требуют спеки марок. */
+function barPath(x, y, w, h, r, side){
+  r = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  if (side === 'right') return `M${x},${y}h${w-r}a${r},${r} 0 0 1 ${r},${r}v${h-2*r}a${r},${r} 0 0 1 ${-r},${r}h${-(w-r)}z`;
+  return `M${x},${y+r}a${r},${r} 0 0 1 ${r},${-r}h${w-2*r}a${r},${r} 0 0 1 ${r},${r}v${h-r}h${-w}z`;
+}
+
+/* ─── тултип ──────────────────────────────────────────────────────────────── */
+const tip = document.getElementById('tip');
+function showTip(ev, html){
+  tip.innerHTML = html;
+  tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX, y = ev.clientY - 12;
+  x = Math.max(r.width / 2 + 6, Math.min(window.innerWidth - r.width / 2 - 6, x));
+  if (y - r.height < 6) y = ev.clientY + r.height + 20;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+const hideTip = () => { tip.style.opacity = 0; };
+function tipRows(title, rows, total){
+  return `<div class="th">${title}</div>` + rows.map(r =>
+    `<div class="tr"><span class="l">${r.c ? `<i style="background:${r.c}"></i>` : ''}${esc(r.l)}</span>` +
+    `<span class="v">${r.v}</span></div>`).join('') +
+    (total ? `<div class="tr tt"><span class="l">${esc(total.l)}</span><span class="v">${total.v}</span></div>` : '');
+}
+
+/* ─── шапка: пресеты и чипы ───────────────────────────────────────────────── */
+const PRESETS = [
+  {id:'all',  label:'Весь период', from:() => D0},
+  {id:'d14',  label:'14 дней',     from:() => maxDate(shiftDays(D1, -13))},
+  {id:'d7',   label:'7 дней',      from:() => maxDate(shiftDays(D1, -6))},
+  {id:'d3',   label:'3 дня',       from:() => maxDate(shiftDays(D1, -2))},
+];
+const maxDate = d => d < D0 ? D0 : d;
+
+function buildTop(){
+  document.getElementById('brandsub').textContent =
+    `счётчик ${DATA.meta.counter} · ${DATA.meta.site} · обновлено ${DATA.meta.generated}`;
+  const ps = document.getElementById('presets');
+  ps.innerHTML = PRESETS.map(p => `<button data-p="${p.id}">${p.label}</button>`).join('');
+  ps.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const p = PRESETS.find(x => x.id === b.dataset.p);
+    state.from = p.from(); state.to = D1; render();
+  });
+  const fi = document.getElementById('from'), ti = document.getElementById('to');
+  [fi, ti].forEach(i => { i.min = D0; i.max = D1; i.addEventListener('change', () => {
+    if (fi.value) state.from = fi.value; if (ti.value) state.to = ti.value;
+    if (state.from > state.to) state.to = state.from;
+    render();
+  }); });
+
+  const chips = document.getElementById('chips');
+  chips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    const k = b.dataset.ch;
+    // одиночный клик по единственному активному каналу — вернуть все
+    if (state.ch.has(k)) { if (state.ch.size === 1) DATA.channels.forEach(c => state.ch.add(c.key));
+      else state.ch.delete(k); }
+    else state.ch.add(k);
+    render();
+  });
+}
+function renderTop(){
+  document.querySelectorAll('#presets button').forEach(b => {
+    const p = PRESETS.find(x => x.id === b.dataset.p);
+    b.setAttribute('aria-pressed', String(state.from === p.from() && state.to === D1));
+  });
+  document.getElementById('from').value = state.from;
+  document.getElementById('to').value = state.to;
+  const per = aggBy(state.from, state.to, new Set(DATA.channels.map(c => c.key)), r => r.ch, r => r.ch);
+  document.getElementById('chips').innerHTML = DATA.channels.map(c => {
+    const a = per.get(c.key) || blank();
+    return `<button class="chip" data-ch="${c.key}" aria-pressed="${state.ch.has(c.key)}"
+      style="color:var(--ch-${c.key})"><i class="dot"></i>
+      <span style="color:var(--ink)">${esc(c.short)}</span>
+      <span class="n">${n0(a.visits)}</span></button>`;
+  }).join('');
+}
+
+/* ─── KPI ─────────────────────────────────────────────────────────────────── */
+function sparkline(vals, color){
+  const w = 120, h = 26, pad = 2;
+  const max = Math.max(...vals, 1), min = Math.min(...vals, 0);
+  const x = i => vals.length < 2 ? w / 2 : pad + i * (w - 2 * pad) / (vals.length - 1);
+  const y = v => h - pad - (v - min) / ((max - min) || 1) * (h - 2 * pad);
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const area = line + `L${x(vals.length - 1).toFixed(1)},${h}L${x(0).toFixed(1)},${h}Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <path d="${area}" fill="${color}" fill-opacity=".1"/>
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(vals.length - 1).toFixed(1)}" cy="${y(vals[vals.length - 1]).toFixed(1)}" r="2.6"
+      fill="${color}" stroke="var(--surface)" stroke-width="1.6"/></svg>`;
+}
+function renderKpis(cur, prev, byDay){
+  const dsel = datesInRange();
+  const series = f => dsel.map(d => f(byDay.get(d) || blank()));
+  const kpi = (lbl, val, note, curV, prevV, better, serie) => {
+    const dlt = prevV ? (curV - prevV) / prevV * 100 : null;
+    const cls = dlt === null || Math.abs(dlt) < 1 ? 'flat' : (dlt > 0 === (better > 0) ? 'up' : 'down');
+    const sign = dlt > 0 ? '+' : '';
+    return `<div class="card kpi"><div class="lbl">${lbl}</div><div class="v">${val}</div>
+      ${note ? `<div class="note">${note}</div>` : ''}
+      <div class="d ${cls}">${dlt === null ? '&nbsp;' :
+        `<b>${sign}${n1(dlt)} %</b> к прошлым ${daysBetween(state.from, state.to)} дн.`}</div>
+      ${sparkline(serie, 'var(--ink-3)')}</div>`;
+  };
+  const cpaC = cur.goals ? cur.cost / cur.goals : 0, cpaP = prev.goals ? prev.cost / prev.goals : 0;
+  const cpcC = cur.clicks ? cur.cost / cur.clicks : 0, cpcP = prev.clicks ? prev.cost / prev.clicks : 0;
+  document.getElementById('kpis').innerHTML = [
+    kpi('Расход', money(cur.cost + cur.costMp),
+        cur.costMp ? `из них ${money(cur.costMp)} мимо сайта` : '',
+        cur.cost + cur.costMp, prev.cost + prev.costMp, -1, series(a => a.cost + a.costMp)),
+    kpi('Клики в рекламе', n0(cur.clicks + cur.clicksMp), '',
+        cur.clicks + cur.clicksMp, prev.clicks + prev.clicksMp, 1, series(a => a.clicks + a.clicksMp)),
+    kpi('Визиты на сайт', n0(cur.visits),
+        `доехали ${pct(cur.visits, cur.clicks, 0)} кликов`, cur.visits, prev.visits, 1, series(a => a.visits)),
+    kpi('Переходы на маркетплейс', n0(cur.goals),
+        `${pct(cur.goals, cur.visits, 1)} визитов`, cur.goals, prev.goals, 1, series(a => a.goals)),
+    kpi('Цена перехода', dash(cpaC, money2), 'расход на сайт ÷ переходы', cpaC, cpaP, -1,
+        series(a => a.goals ? a.cost / a.goals : 0)),
+    kpi('Цена клика', dash(cpcC, money2), `цена визита ${dash(cur.visits ? cur.cost / cur.visits : 0, money2)}`,
+        cpcC, cpcP, -1, series(a => a.clicks ? a.cost / a.clicks : 0)),
+  ].join('');
+}
+
+/* ─── воронка ─────────────────────────────────────────────────────────────── */
+function renderFunnel(cur, byCh){
+  const chs = DATA.channels.filter(c => state.ch.has(c.key));
+  const stages = [
+    {key:'imp',    lbl:'Показы',  get:a => a.imp,    hint:'сколько раз объявление увидели'},
+    {key:'clicks', lbl:'Клики',   get:a => a.clicks, hint:'перешли по объявлению'},
+    {key:'visits', lbl:'Визиты',  get:a => a.visits, hint:'дошли до сайта'},
+    {key:'goals',  lbl:'Переходы на маркетплейс', get:a => a.goals, hint:'нажали кнопку покупки'},
+  ];
+  const tot = stages.map(s => s.get(cur));
+  const rows = [];
+  stages.forEach((s, i) => {
+    // Полоса шага = состав шага по каналам, всегда во всю ширину. Масштабировать её
+    // по объёму нельзя: 646 переходов рядом с 1,2 млн показов — это невидимая полоска.
+    const base = tot[i], segs = [];
+    let acc = 0;
+    chs.forEach(c => {
+      const a = byCh.get(c.key) || blank();
+      const v = s.get(a);
+      const share = base ? v / base : 0;
+      if (share > 0) segs.push({ch:c, v, x:acc * 100, w:share * 100});
+      acc += share;
+    });
+    const prevTot = i ? tot[i - 1] : tot[0];
+    const barH = 26;
+    const bar = `<svg viewBox="0 0 100 ${barH}" height="${barH}" width="100%" preserveAspectRatio="none"
+        style="border-radius:3px; background:var(--surface-2)">` +
+      segs.map(g => {
+        const gap = g.w > 0.8 ? 0.35 : 0;   // 2px-зазор поверхности между сегментами
+        return `<rect x="${(g.x + gap).toFixed(3)}" y="0" width="${Math.max(0.15, g.w - gap).toFixed(3)}"
+          height="${barH}" fill="var(--ch-${g.ch.key})"
+          data-tip='${esc(JSON.stringify({s:s.lbl, k:g.ch.key, ch:g.ch.short, v:g.v, base:base}))}'></rect>`;
+      }).join('') + `</svg>`;
+    const cost = i === 0 ? (cur.cost ? cur.cost / tot[0] * 1000 : 0) : (tot[i] ? cur.cost / tot[i] : 0);
+    const costLbl = i === 0 ? 'CPM' : i === 1 ? 'цена клика' : i === 2 ? 'цена визита' : 'цена перехода';
+    rows.push(`<div class="stage ${i === 3 ? 'hero' : ''}">
+        <div><div class="lbl">${s.lbl}</div><div class="val">${n0(tot[i])}</div></div>
+        <div>${bar}</div>
+        <div class="rt">${dash(cost, i === 0 ? money2 : money2)}<span>${costLbl}</span></div>
+      </div>`);
+    if (i < stages.length - 1) {
+      const nxt = stages[i + 1].get(cur), conv = tot[i] ? nxt / tot[i] * 100 : 0;
+      const lost = tot[i] - nxt;
+      rows.push(`<div class="link"><div class="conv"><span class="arrow">↓</span>
+        <b>${conv < 1 ? conv.toFixed(2) : n1(conv)} %</b>
+        <span>${stages[i + 1].hint}</span>
+        <span class="loss">· не дошли ${n0(lost)}</span></div></div>`);
+    }
+  });
+  let branch = '';
+  if (cur.clicksMp) {
+    const names = [...new Set(DATA.ads.filter(r => r.mp && state.ch.has(r.ch) &&
+      inRange(r.d, state.from, state.to)).map(r => r.camp))];
+    branch = `<div class="branch">Мимо сайта: <b>${n0(cur.clicksMp)}</b> кликов и
+      <b>${money(cur.costMp)}</b> ушли сразу на карточку маркетплейса —
+      ${names.map(n => '«' + esc(n) + '»').join(', ')} ${names.length > 1 ? 'ведут' : 'ведёт'}
+      трафик в обход лендинга, результат виден только в кабинете маркетплейса.</div>`;
+  }
+  document.getElementById('funnel').innerHTML = rows.join('') + branch;
+  document.querySelectorAll('#funnel rect[data-tip]').forEach(r => {
+    r.addEventListener('mousemove', e => {
+      const d = JSON.parse(r.dataset.tip);
+      showTip(e, tipRows(d.s, [
+        {l:d.ch, v:n0(d.v), c:CHCOLOR(d.k)},
+        {l:'доля шага', v:pct(d.v, d.base, 1)},
+      ]));
+    });
+    r.addEventListener('mouseleave', hideTip);
+  });
+
+  // мини-воронки по каналам — сравнение долей, а не объёмов
+  const side = chs.map(c => {
+    const a = byCh.get(c.key) || blank();
+    const steps = [
+      {l:'CTR', v:a.imp ? a.clicks / a.imp : 0, t:pct(a.clicks, a.imp, 2)},
+      {l:'клик→визит', v:a.clicks ? Math.min(1, a.visits / a.clicks) : 0, t:pct(a.visits, a.clicks, 0)},
+      {l:'визит→переход', v:a.visits ? a.goals / a.visits : 0, t:pct(a.goals, a.visits, 1)},
+    ];
+    const max = [0.05, 1, 0.15];  // своя шкала на шаг: иначе CTR не видно рядом с доездом
+    return `<div class="mini">
+      <div class="mini-row" style="font-weight:600; color:var(--ink)">
+        <div class="nm"><i style="background:var(--ch-${c.key})"></i>${esc(c.short)}</div>
+        <div class="rt" style="grid-column:3; color:var(--ink-2)">${dash(a.goals ? a.cost / a.goals : 0, money2)}</div>
+      </div>` + steps.map((s, i) => `<div class="mini-row">
+        <div class="nm" style="color:var(--ink-3); padding-left:14px">${s.l}</div>
+        <div><svg viewBox="0 0 100 8" height="8" width="100%" preserveAspectRatio="none"
+          style="background:var(--surface-2); border-radius:2px">
+          <rect x="0" y="0" width="${Math.max(0.4, Math.min(100, s.v / max[i] * 100)).toFixed(2)}" height="8"
+            fill="var(--ch-${c.key})" fill-opacity=".85"/></svg></div>
+        <div class="rt">${s.t}</div></div>`).join('') + `</div>`;
+  }).join('');
+  document.getElementById('side').innerHTML =
+    `<h3>Каналы в долях</h3><div style="font-size:12px; color:var(--ink-3); margin-top:-8px">
+      у каждого шага своя шкала: сравнивайте каналы между собой, а не шаги друг с другом.
+      Справа — цена перехода</div>` + side;
+}
+
+/* ─── график по дням ──────────────────────────────────────────────────────── */
+const METRICS = [
+  {id:'cost',   lbl:'Расход',   kind:'stack', get:a => a.cost + a.costMp, fmt:money},
+  {id:'clicks', lbl:'Клики',    kind:'stack', get:a => a.clicks + a.clicksMp, fmt:n0},
+  {id:'visits', lbl:'Визиты',   kind:'stack', get:a => a.visits, fmt:n0},
+  {id:'goals',  lbl:'Переходы', kind:'stack', get:a => a.goals, fmt:n0},
+  {id:'cpa',    lbl:'Цена перехода', kind:'line', get:a => a.goals ? a.cost / a.goals : null, fmt:money2},
+  {id:'cr',     lbl:'Визит→переход', kind:'line', get:a => a.visits ? a.goals / a.visits * 100 : null,
+   fmt:v => n1(v) + ' %'},
+];
+function datesInRange(){ return ALLDATES.filter(d => inRange(d, state.from, state.to)); }
+
+function renderDayChart(){
+  const m = METRICS.find(x => x.id === state.metric);
+  const dates = datesInRange();
+  const chs = DATA.channels.filter(c => state.ch.has(c.key));
+  const per = new Map();  // канал|день
+  const key = r => r.ch + '|' + r.d;
+  DATA.ads.forEach(r => { if (state.ch.has(r.ch) && inRange(r.d, state.from, state.to)) {
+    if (!per.has(key(r))) per.set(key(r), blank()); addAds(per.get(key(r)), r); }});
+  DATA.days.forEach(r => { if (state.ch.has(r.ch) && inRange(r.d, state.from, state.to)) {
+    if (!per.has(key(r))) per.set(key(r), blank()); addSite(per.get(key(r)), r); }});
+  const val = (c, d) => { const a = per.get(c + '|' + d); return a ? m.get(a) : (m.kind === 'stack' ? 0 : null); };
+
+  const host = document.getElementById('daychart');
+  const W = Math.max(560, host.clientWidth || 900), H = 264;
+  const pad = {l:58, r:16, t:14, b:26};
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const s = svg(W, H, host);
+  s.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  let max = 0;
+  if (m.kind === 'stack') dates.forEach(d => { max = Math.max(max, chs.reduce((t, c) => t + (val(c.key, d) || 0), 0)); });
+  else dates.forEach(d => chs.forEach(c => { const v = val(c.key, d); if (v !== null) max = Math.max(max, v); }));
+  max = max || 1;
+  const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); const r = max / p;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * p; })();
+  const y = v => pad.t + ih - (v / nice) * ih;
+  const band = iw / Math.max(1, dates.length);
+  const bw = Math.min(24, band * 0.62);
+  const cx = i => pad.l + band * (i + 0.5);
+
+  for (let i = 0; i <= 4; i++){
+    const v = nice * i / 4;
+    el('line', {x1:pad.l, x2:W - pad.r, y1:y(v), y2:y(v), class:'gline'}, s);
+    el('text', {x:pad.l - 9, y:y(v) + 4, class:'axis', 'text-anchor':'end'}, s)
+      .textContent = m.id === 'cost' ? compact(v) : m.id === 'cr' ? n1(v) : compact(v);
+  }
+  const every = Math.ceil(dates.length / 16);
+  dates.forEach((d, i) => { if (i % every === 0 || i === dates.length - 1)
+    el('text', {x:cx(i), y:H - 6, class:'axis', 'text-anchor':'middle'}, s).textContent = ru(d); });
+
+  if (m.kind === 'stack'){
+    dates.forEach((d, i) => {
+      let acc = 0;
+      chs.forEach(c => {
+        const v = val(c.key, d); if (!v) return;
+        const y0 = y(acc + v), y1 = y(acc);
+        const h = Math.max(1, y1 - y0 - (acc > 0 ? 2 : 0));   // 2px-зазор поверхности в стопке
+        el('path', {d:barPath(cx(i) - bw / 2, y0, bw, h, 4, 'top'), fill:`var(--ch-${c.key})`}, s);
+        acc += v;
+      });
+    });
+  } else {
+    chs.forEach(c => {
+      const pts = dates.map((d, i) => ({x:cx(i), v:val(c.key, d)})).filter(p => p.v !== null);
+      if (!pts.length) return;
+      el('path', {d:pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${y(p.v).toFixed(1)}`).join(''),
+        fill:'none', stroke:`var(--ch-${c.key})`, 'stroke-width':2,
+        'stroke-linejoin':'round', 'stroke-linecap':'round'}, s);
+      const last = pts[pts.length - 1];
+      el('circle', {cx:last.x, cy:y(last.v), r:4, fill:`var(--ch-${c.key})`,
+        stroke:'var(--surface)', 'stroke-width':2}, s);
+      el('text', {x:last.x + 9, y:y(last.v) + 4, class:'dlabel'}, s).textContent = m.fmt(last.v);
+    });
+  }
+  // прозрачные полосы наведения — цель крупнее марки
+  dates.forEach((d, i) => {
+    const r = el('rect', {x:pad.l + band * i, y:pad.t, width:band, height:ih, fill:'transparent'}, s);
+    r.addEventListener('mousemove', e => {
+      const rows = chs.map(c => ({l:c.short, c:CHCOLOR(c.key), v:val(c.key, d) === null ? '—' : m.fmt(val(c.key, d))}))
+        .filter(x => x.v !== '—');
+      const total = m.kind === 'stack'
+        ? {l:'всего', v:m.fmt(chs.reduce((t, c) => t + (val(c.key, d) || 0), 0))} : null;
+      showTip(e, tipRows(ruFull(d) + ' · ' + m.lbl, rows, total));
+      hl.setAttribute('x', pad.l + band * i); hl.setAttribute('width', band); hl.style.opacity = .5;
+    });
+    r.addEventListener('mouseleave', () => { hideTip(); hl.style.opacity = 0; });
+  });
+  const hl = el('rect', {x:0, y:pad.t, width:0, height:ih, fill:'var(--surface-3)', opacity:0}, s);
+  s.insertBefore(hl, s.firstChild);
+
+  document.getElementById('daylegend').innerHTML = chs.map(c =>
+    `<span><i style="background:var(--ch-${c.key})"></i>${esc(c.short)}</span>`).join('');
+  document.getElementById('dayfoot').innerHTML = m.kind === 'stack'
+    ? ' · столбцы сложены: высота — сумма по выбранным каналам'
+    : ' · линии не складываются: у каждого канала свой уровень';
+  renderDayTable(dates, chs, per, m);
+}
+function renderDayTable(dates, chs, per, m){
+  const t = document.getElementById('daytable');
+  const head = `<thead><tr><th>Дата</th>${chs.map(c => `<th>${esc(c.short)}</th>`).join('')}
+    <th>Всего</th></tr></thead>`;
+  const body = dates.map(d => {
+    const vals = chs.map(c => { const a = per.get(c.key + '|' + d); return a ? m.get(a) : null; });
+    const tot = m.kind === 'stack' ? vals.reduce((s, v) => s + (v || 0), 0) : null;
+    return `<tr><td class="num">${ruFull(d)}</td>` +
+      vals.map(v => `<td class="num">${v === null || v === 0 ? '<span class="dim">—</span>' : m.fmt(v)}</td>`).join('') +
+      `<td class="num">${tot === null ? '<span class="dim">—</span>' : m.fmt(tot)}</td></tr>`;
+  }).join('');
+  t.innerHTML = head + `<tbody>${body}</tbody>`;
+}
+
+/* ─── таблица каналов ─────────────────────────────────────────────────────── */
+function renderChTable(cur, byCh){
+  const cols = [
+    ['Канал', a => a._name],
+    // расход показываем разделённым: остальные колонки строки считаются от «на сайт»
+    ['Расход на сайт', a => money(a.cost) +
+      (a.costMp ? `<div class="dim" style="font-size:11px">+ ${money(a.costMp)} мимо сайта</div>` : '')],
+    ['Показы', a => n0(a.imp)],
+    ['Клики', a => n0(a.clicks)], ['CTR', a => pct(a.clicks, a.imp, 2)],
+    ['CPC', a => dash(a.clicks ? a.cost / a.clicks : 0, money2)],
+    ['Визиты', a => n0(a.visits)], ['Клик→визит', a => pct(a.visits, a.clicks, 0)],
+    ['Отказы', a => a.visits ? n1(a.bounceSum / a.visits) + ' %' : '—'],
+    ['На сайте', a => a.visits ? Math.round(a.durSum / a.visits) + ' с' : '—'],
+    ['Переходы', a => n0(a.goals)], ['Визит→переход', a => pct(a.goals, a.visits, 1)],
+    ['Цена перехода', a => dash(a.goals ? a.cost / a.goals : 0, money2)],
+  ];
+  const rows = DATA.channels.filter(c => state.ch.has(c.key)).map(c => {
+    const a = Object.assign({}, byCh.get(c.key) || blank());
+    a._name = `<div class="cellname"><i style="background:var(--ch-${c.key})"></i><span>${esc(c.name)}</span></div>`;
+    return {c, a};
+  });
+  const total = Object.assign({}, cur, {_name:'<b>Всего</b>'});
+  document.getElementById('chtable').innerHTML =
+    `<thead><tr>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr></thead><tbody>` +
+    rows.map(({c, a}) => `<tr data-ch="${c.key}" style="cursor:pointer">` +
+      cols.map((col, i) => `<td class="${i ? 'num' : ''}">${col[1](a)}</td>`).join('') + '</tr>').join('') +
+    `<tr class="total">${cols.map((col, i) => `<td class="${i ? 'num' : ''}">${col[1](total)}</td>`).join('')}</tr>` +
+    `</tbody>`;
+  document.querySelectorAll('#chtable tr[data-ch]').forEach(tr => tr.addEventListener('click', () => {
+    const k = tr.dataset.ch;
+    if (state.ch.size === 1 && state.ch.has(k)) DATA.channels.forEach(c => state.ch.add(c.key));
+    else { state.ch.clear(); state.ch.add(k); }
+    render();
+  }));
+}
+
+/* ─── таблица кампаний ────────────────────────────────────────────────────── */
+const CAMPCOLS = [
+  {k:'name',   l:'Кампания',  cell:r => `<div class="cellname"><i style="background:var(--ch-${r.ch})"></i>
+      <span>${esc(r.name)}</span></div>${r.mp ? '<span class="badge mp">мимо сайта</span>' :
+      (!r.visits && (r.clicks + r.clicksMp) ? '<span class="badge">нет визитов</span>' : '')}`,
+   val:r => r.name, txt:1},
+  {k:'cost',   l:'Расход',    cell:r => money(r.cost + r.costMp), val:r => r.cost + r.costMp},
+  {k:'imp',    l:'Показы',    cell:r => n0(r.imp + r.impMp), val:r => r.imp + r.impMp},
+  {k:'clicks', l:'Клики',     cell:r => n0(r.clicks + r.clicksMp), val:r => r.clicks + r.clicksMp},
+  {k:'ctr',    l:'CTR',       cell:r => pct(r.clicks + r.clicksMp, r.imp + r.impMp, 2),
+   val:r => (r.imp + r.impMp) ? (r.clicks + r.clicksMp) / (r.imp + r.impMp) : 0},
+  {k:'cpc',    l:'CPC',       cell:r => dash((r.clicks + r.clicksMp) ? (r.cost + r.costMp) / (r.clicks + r.clicksMp) : 0, money2),
+   val:r => (r.clicks + r.clicksMp) ? (r.cost + r.costMp) / (r.clicks + r.clicksMp) : 0},
+  {k:'visits', l:'Визиты',    cell:r => r.mp ? '<span class="dim">—</span>' : n0(r.visits), val:r => r.visits},
+  {k:'k2v',    l:'Клик→визит',cell:r => r.mp ? '<span class="dim">—</span>' : pct(r.visits, r.clicks, 0),
+   val:r => r.clicks ? r.visits / r.clicks : 0},
+  {k:'bounce', l:'Отказы',    cell:r => r.visits && r.bounceSum ? n1(r.bounceSum / r.visits) + ' %' : '<span class="dim">—</span>',
+   val:r => r.visits ? r.bounceSum / r.visits : 0},
+  {k:'goals',  l:'Переходы',  cell:r => r.mp ? '<span class="dim">—</span>' : n0(r.goals), val:r => r.goals},
+  {k:'cr',     l:'Визит→переход', cell:r => r.mp ? '<span class="dim">—</span>' : pct(r.goals, r.visits, 1),
+   val:r => r.visits ? r.goals / r.visits : 0},
+  {k:'cpa',    l:'Цена перехода', cell:r => r.mp ? '<span class="dim">—</span>' :
+      dash(r.goals ? r.cost / r.goals : 0, money2), val:r => r.goals ? r.cost / r.goals : 1e12},
+];
+function renderCampTable(rows, byCh){
+  // Часть визитов до кампании не доводится (нет utm, склейка не сработала) — показываем
+  // остаток явной строкой, чтобы сумма по таблице сходилась с каналом.
+  rows = rows.filter(r => r.name);
+  DATA.channels.filter(c => state.ch.has(c.key)).forEach(c => {
+    const ch = byCh.get(c.key); if (!ch) return;
+    const named = rows.filter(r => r.ch === c.key);
+    const rest = Object.assign(blank(), {
+      ch:c.key, key:'∅', name:'без привязки к кампании · ' + c.short, mp:0, rest:true,
+      visits: ch.visits - named.reduce((s, r) => s + r.visits, 0),
+      goals:  ch.goals  - named.reduce((s, r) => s + r.goals, 0),
+    });
+    rest.g = ch.g.map((v, i) => v - named.reduce((s, r) => s + r.g[i], 0));
+    if (rest.visits > 0) rows.push(rest);
+  });
+  const s = state.sortCamp;
+  const col = CAMPCOLS.find(c => c.k === s.key) || CAMPCOLS[1];
+  const sorted = [...rows].sort((a, b) => {
+    const va = col.val(a), vb = col.val(b);
+    return col.txt ? String(va).localeCompare(String(vb), 'ru') * s.dir : (va - vb) * s.dir;
+  });
+  const t = document.getElementById('camptable');
+  t.innerHTML = `<thead><tr>${CAMPCOLS.map(c =>
+      `<th role="button" tabindex="0" data-k="${c.k}" class="${c.k === s.key ? 'sorted' : ''}">${c.l}` +
+      `${c.k === s.key ? `<span class="car">${s.dir > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('')}</tr></thead>` +
+    `<tbody>${sorted.map(r => `<tr${r.rest ? ' class="dim"' : ''}>${CAMPCOLS.map((c, i) =>
+      `<td class="${i ? 'num' : ''}">${c.cell(r)}</td>`).join('')}</tr>`).join('')}` +
+    `<tr class="total">${CAMPCOLS.map((c, i) => `<td class="${i ? 'num' : ''}">${
+      i ? c.cell(rows.reduce((t, r) => {
+        ['imp','clicks','cost','impMp','clicksMp','costMp','visits','goals','bounceSum'].forEach(k => t[k] += r[k]);
+        return t;
+      }, Object.assign(blank(), {name:'Всего', ch:'other', mp:0}))) :
+      '<b>Всего</b>'}</td>`).join('')}</tr></tbody>`;
+  t.querySelectorAll('th').forEach(th => {
+    const go = () => { const k = th.dataset.k;
+      state.sortCamp = {key:k, dir: s.key === k ? -s.dir : (k === 'name' ? 1 : -1)}; render(); };
+    th.addEventListener('click', go);
+    th.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+  // Атрибуция по кампаниям (utm, yclid) и по каналам считается по-разному, суммы расходятся —
+  // это нормально, но читателя надо предупредить, иначе он ищет ошибку.
+  const chTotal = DATA.channels.filter(c => state.ch.has(c.key))
+    .reduce((s, c) => s + ((byCh.get(c.key) || blank()).visits), 0);
+  const campTotal = rows.reduce((s, r) => s + r.visits, 0);
+  const diff = Math.round(campTotal - chTotal);
+  document.getElementById('camphint').textContent = diff
+    ? `визитов по кампаниям на ${n0(Math.abs(diff))} ${diff > 0 ? 'больше' : 'меньше'}, чем по каналам — ` +
+      'разметка и источник визита считаются по-разному'
+    : 'показы, клики и расход — из кабинетов, визиты и переходы — из Метрики';
+}
+
+/* ─── цели ────────────────────────────────────────────────────────────────── */
+function renderGoals(cur, byCh){
+  const chs = DATA.channels.filter(c => state.ch.has(c.key));
+  const host = document.getElementById('goalchart');
+  const rows = DATA.goals.map((g, i) => ({g, i, v:cur.g[i]})).sort((a, b) => b.v - a.v);
+  const max = Math.max(...rows.map(r => r.v), 1);
+  const W = Math.max(560, host.clientWidth || 900), rowH = 30, labelW = Math.min(320, W * 0.3);
+  const valW = 118, H = rows.length * rowH + 8;
+  const s = svg(W, H, host);
+  s.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const bw = W - labelW - valW;
+  rows.forEach((r, i) => {
+    const y = i * rowH + 4;
+    el('text', {x:0, y:y + 15, class:'dlabel', 'text-anchor':'start'}, s).textContent = r.g.name.replace('Клик - ', '');
+    let acc = 0;
+    chs.forEach(c => {
+      const a = byCh.get(c.key) || blank(); const v = a.g[r.i];
+      if (!v) return;
+      const x0 = labelW + acc / max * bw, w = v / max * bw;
+      const gap = w > 4 ? 2 : 0;   // 2px-зазор поверхности между сегментами
+      const seg = el('path', {d:barPath(x0 + gap, y, Math.max(1, w - gap), 18, 4, 'right'),
+        fill:`var(--ch-${c.key})`}, s);
+      seg.addEventListener('mousemove', e => showTip(e, tipRows(r.g.name,
+        chs.map(cc => ({l:cc.short, c:CHCOLOR(cc.key), v:n0((byCh.get(cc.key) || blank()).g[r.i])}))
+          .concat([{l:GOAL_DEST[r.g.name] || '', v:''}]),
+        {l:'всего по цели', v:n0(r.v)})));
+      seg.addEventListener('mouseleave', hideTip);
+      acc += v;
+    });
+    el('text', {x:W, y:y + 15, class:'dlabel', 'text-anchor':'end'}, s).textContent =
+      n0(r.v) + '  ·  ' + pct(r.v, cur.goals, 0);
+  });
+}
+
+/* ─── диагностика ─────────────────────────────────────────────────────────── */
+function renderInsights(cur, byCh, camps){
+  const out = [];
+  const add = (sev, t, p) => out.push({sev, t, p});
+
+  DATA.channels.filter(c => state.ch.has(c.key) && c.key !== 'other').forEach(c => {
+    const a = byCh.get(c.key); if (!a || !a.clicks) return;
+    const rate = a.visits / a.clicks;
+    if (rate < 0.75){
+      const lostMoney = a.cost * (1 - rate);
+      add(rate < 0.5 ? 'crit' : 'warn', `${c.short}: до сайта доезжает ${pct(a.visits, a.clicks, 0)} кликов`,
+        `Кабинет засчитал <span class="num">${n0(a.clicks)}</span> кликов, Метрика увидела
+         <span class="num">${n0(a.visits)}</span> визитов. Разница — <span class="num">${money(lostMoney)}</span>
+         оплаченного трафика: часть люди закрывают до загрузки, часть теряется на редиректе.
+         Проверьте скорость лендинга и что счётчик стоит на всех версиях страницы.`);
+    }
+    if (a.visits >= 100 && a.bounceSum / a.visits > 65)
+      add('warn', `${c.short}: отказы ${n1(a.bounceSum / a.visits)} %`,
+        `Больше двух третей визитов — без действий. При среднем времени
+         <span class="num">${Math.round(a.durSum / a.visits)} с</span> это чаще всего несовпадение
+         обещания в объявлении и первого экрана.`);
+  });
+
+  const spenders = camps.filter(r => (r.cost + r.costMp) >= 300 && !r.mp);
+  spenders.filter(r => !r.goals).forEach(r =>
+    add('crit', `«${r.name}» — расход без переходов`,
+      `<span class="num">${money(r.cost)}</span> за
+       <span class="num">${n0(r.clicks)}</span> кликов и <span class="num">${n0(r.visits)}</span> визитов,
+       ни одного перехода на маркетплейс. Кандидат на остановку или переработку креатива.`));
+
+  const withCpa = spenders.filter(r => r.goals).map(r => ({r, cpa:r.cost / r.goals})).sort((a, b) => a.cpa - b.cpa);
+  if (withCpa.length >= 2){
+    const best = withCpa[0], worst = withCpa[withCpa.length - 1];
+    add('ok', `Дешевле всего переходы даёт «${best.r.name}»`,
+      `<span class="num">${money2(best.cpa)}</span> за переход при
+       <span class="num">${n0(best.r.goals)}</span> переходах. Это ориентир для остальных.`);
+    if (worst.cpa > best.cpa * 2)
+      add('warn', `«${worst.r.name}» дороже эталона в ${n1(worst.cpa / best.cpa)} ` +
+        plural(Math.round(worst.cpa / best.cpa * 10) / 10, 'раз', 'раза', 'раз'),
+        `<span class="num">${money2(worst.cpa)}</span> за переход против
+         <span class="num">${money2(best.cpa)}</span> у «${best.r.name}».
+         Разница по бюджету за период — <span class="num">${money(worst.r.cost - worst.r.goals * best.cpa)}</span>.`);
+  }
+
+  const noAds = camps.filter(r => r.name && !r.imp && !r.impMp && r.visits >= 30);
+  if (noAds.length)
+    add('warn', 'Есть визиты без расхода в кабинете',
+      `${noAds.map(r => '«' + esc(r.name) + '»').join(', ')} — визиты приходят,
+       но с расходом не сопоставлены. Обычно это разметка utm, которая не совпадает с именем кампании.`);
+
+  if (cur.clicksMp)
+    add('warn', 'Часть бюджета не видна в воронке',
+      `<span class="num">${money(cur.costMp)}</span> ушло в кампанию, которая ведёт сразу на маркетплейс.
+       Ни визитов, ни целей по ней не будет — результат смотрите в кабинете Ozon,
+       иначе эти деньги выглядят потраченными впустую.`);
+
+  // разгон или просадка цены перехода в последней трети периода
+  const ds = datesInRange();
+  if (ds.length >= 6){
+    const cut = Math.floor(ds.length / 2);
+    const half = (from, to) => agg(from, to, state.ch);
+    const a1 = half(ds[0], ds[cut - 1]), a2 = half(ds[cut], ds[ds.length - 1]);
+    const c1 = a1.goals ? a1.cost / a1.goals : 0, c2 = a2.goals ? a2.cost / a2.goals : 0;
+    if (c1 && c2 && Math.abs(c2 - c1) / c1 > 0.25)
+      add(c2 > c1 ? 'warn' : 'ok', `Цена перехода ${c2 > c1 ? 'выросла' : 'снизилась'} на ${n0(Math.abs(c2 - c1) / c1 * 100)} %`,
+        `Первая половина периода — <span class="num">${money2(c1)}</span>,
+         вторая — <span class="num">${money2(c2)}</span>.
+         ${c2 > c1 ? 'Смотрите, какая кампания набрала долю расхода.' : 'Что бы это ни было — стоит закрепить.'}`);
+  }
+
+  const order = {crit:0, warn:1, ok:2};
+  out.sort((a, b) => order[a.sev] - order[b.sev]);
+  const label = {crit:'важно', warn:'внимание', ok:'хорошо'};
+  document.getElementById('insights').innerHTML = out.length ? out.map(i =>
+    `<div class="card ins ${i.sev}"><div class="t"><span class="sev">${label[i.sev]}</span>${esc(i.t)}</div>
+     <p>${i.p}</p></div>`).join('')
+    : `<div class="card ins"><div class="t">Ничего критичного</div>
+       <p>За выбранный период показатели без выбросов.</p></div>`;
+}
+
+/* ─── подвал ──────────────────────────────────────────────────────────────── */
+function renderMeta(){
+  const notes = (DATA.meta.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
+  document.getElementById('meta').innerHTML = `
+    <div><h3>Откуда данные</h3>
+      <ul>
+        <li>Показы, клики, расход — кабинеты Директа, Авито и ВК.</li>
+        <li>Визиты, отказы, цели — Яндекс.Метрика, счётчик ${DATA.meta.counter}.</li>
+        <li>Переход на маркетплейс — сумма всех ${DATA.goals.length} целей-кнопок лендинга.</li>
+      </ul></div>
+    <div><h3>Как обновить</h3>
+      <p>Из корня проекта:</p>
+      <p><code>python3 "Аналитика и скрипты/dashboard.py"</code></p>
+      <p style="margin-top:6px">Файл перезаписывается целиком, данные зашиты внутрь — можно пересылать как есть.</p></div>
+    <div><h3>Что помнить при чтении</h3>
+      <ul>
+        <li>Клики кабинета и визиты Метрики никогда не сходятся: клик считает площадка, визит — счётчик.</li>
+        <li>Последний день периода почти всегда неполный.</li>
+        <li>Дальше кнопки маркетплейса воронка не видна: заказы живут в кабинетах Ozon и WB.</li>
+        ${notes}
+      </ul></div>
+    <div><h3>Период</h3>
+      <p>Данные собраны за <span class="num">${ruFull(DATA.meta.from)} — ${ruFull(DATA.meta.to)}</span>,
+      выгрузка <span class="num">${esc(DATA.meta.generated)}</span>.</p></div>`;
+}
+
+/* ─── сборка ──────────────────────────────────────────────────────────────── */
+function render(){
+  renderTop();
+  const cur = agg(state.from, state.to, state.ch);
+  const len = daysBetween(state.from, state.to);
+  const pFrom = shiftDays(state.from, -len), pTo = shiftDays(state.from, -1);
+  const prev = agg(pFrom, pTo, state.ch);
+  const byCh = aggBy(state.from, state.to, state.ch, r => r.ch, r => r.ch);
+  const byDay = aggBy(state.from, state.to, state.ch, r => r.d, r => r.d);
+  const camps = campaigns(state.from, state.to, state.ch);
+
+  renderKpis(cur, prev, byDay);
+  renderFunnel(cur, byCh);
+  renderDayChart();
+  renderChTable(cur, byCh);
+  renderCampTable(camps, byCh);
+  renderGoals(cur, byCh);
+  renderInsights(cur, byCh, camps);
+  renderMeta();
+  document.getElementById('dayshint').textContent =
+    `${ruFull(state.from)} — ${ruFull(state.to)}, ${len} дн.`;
+}
+
+function buildMetricSwitch(){
+  const box = document.getElementById('metrics');
+  box.innerHTML = METRICS.map(m => `<button data-m="${m.id}"
+    aria-pressed="${m.id === state.metric}">${m.lbl}</button>`).join('');
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    state.metric = b.dataset.m;
+    box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.m === state.metric)));
+    renderDayChart();
+  });
+  const tg = document.getElementById('daytoggle');
+  tg.addEventListener('click', () => {
+    state.dayTable = !state.dayTable;
+    document.getElementById('daytablewrap').classList.toggle('hidden', !state.dayTable);
+    tg.textContent = state.dayTable ? 'скрыть таблицу' : 'показать таблицей';
+  });
+}
+
+buildTop();
+buildMetricSwitch();
+render();
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => {
+  renderDayChart(); const cur = agg(state.from, state.to, state.ch);
+  renderGoals(cur, aggBy(state.from, state.to, state.ch, r => r.ch, r => r.ch)); }, 160); });
+</script>
+</body>
+</html>

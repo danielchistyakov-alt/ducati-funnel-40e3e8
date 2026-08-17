@@ -1,0 +1,44 @@
+name: Пересборка дашборда
+
+on:
+  schedule:
+    - cron: "0 6 * * *"      # 06:00 UTC = 09:00 МСК, к этому времени расходы за вчера уже загружены
+  workflow_dispatch:          # и кнопкой Run workflow вручную
+
+concurrency:
+  group: dashboard
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Собрать дашборд
+        env:
+          YM_TOKEN: ${{ secrets.YM_TOKEN }}
+          YD_TOKEN: ${{ secrets.YD_TOKEN }}
+          AV_CLIENT_ID: ${{ secrets.AV_CLIENT_ID }}
+          AV_CLIENT_SECRET: ${{ secrets.AV_CLIENT_SECRET }}
+          AV_ACCOUNT_ID: ${{ secrets.AV_ACCOUNT_ID }}
+          VK_TOKEN: ${{ secrets.VK_TOKEN }}
+        run: python3 scripts/dashboard.py --выход index.html
+
+      - name: Закоммитить, если данные изменились
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Данные не изменились — коммита не будет."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "данные на $(date -u +'%d.%m.%Y') (автосборка)"
+          git push
