@@ -8,6 +8,7 @@
     python3 "Аналитика и скрипты/dashboard.py" 2026-08-01 2026-08-17
     python3 "Аналитика и скрипты/dashboard.py" --выход путь.html
     python3 "Аналитика и скрипты/dashboard.py" --артефакт путь.html  # ещё и версия без каркаса
+    python3 "Аналитика и скрипты/dashboard.py" --для-клиента         # без «что требует внимания» и подвала
 
 Откуда что берётся:
   показы, клики, расход  — из рекламных кабинетов (Директ, Авито, ВК): только там
@@ -189,7 +190,7 @@ def vk_rows(d1: str, d2: str) -> list:
 
 # ─────────────────────────────  Сборка  ────────────────────────────────────────
 
-def collect(d1: str, d2: str) -> dict:
+def collect(d1: str, d2: str, client: bool = False) -> dict:
     notes = []
 
     def guarded(label, fn):
@@ -214,6 +215,9 @@ def collect(d1: str, d2: str) -> dict:
             "generated": datetime.now().strftime("%d.%m.%Y %H:%M"),
             "from": dates[0] if dates else d1, "to": dates[-1] if dates else d2,
             "counter": "111262520", "site": "ducatiparfum.ru", "notes": notes,
+            # Клиентская сборка: без блока подсказок «что требует внимания» и без
+            # служебного подвала — это внутренняя кухня, наружу её не показываем.
+            "client": client,
         },
         "channels": CHANNELS,
         "goals": met["goals"],
@@ -223,8 +227,17 @@ def collect(d1: str, d2: str) -> dict:
     }
 
 
+CLIENT_HIDE = ("sec-insights", "sec-meta")   # внутренние секции: наружу не уходят
+
+
 def build(data: dict) -> str:
     tpl = TEMPLATE.read_text(encoding="utf-8")
+    if data["meta"].get("client"):
+        # Вырезаем из разметки, а не прячем в браузере: в исходнике страницы их тоже быть не должно
+        for sec in CLIENT_HIDE:
+            tpl, n = re.subn(rf'<section id="{sec}">.*?</section>', "", tpl, flags=re.S)
+            if not n:
+                sys.exit(f"В шаблоне нет секции {sec} — клиентская версия собралась бы с ней.")
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     # </script> внутри данных разорвал бы тег — экранируем на всякий случай
     payload = payload.replace("</", "<\\/")
@@ -265,8 +278,9 @@ def main() -> None:
     d1 = args[0] if args else START
     d2 = args[1] if len(args) > 1 else date.today().isoformat()
 
-    print(f"Собираю данные за {d1} … {d2}")
-    data = collect(d1, d2)
+    client = "--для-клиента" in sys.argv
+    print(f"Собираю данные за {d1} … {d2}" + (" (версия для клиента)" if client else ""))
+    data = collect(d1, d2, client=client)
     for n in data["meta"]["notes"]:
         print("  !", n)
     page = build(data)

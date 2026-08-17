@@ -318,13 +318,14 @@ svg{display:block; overflow:visible}
     <div class="card chart-card"><div id="goalchart"></div></div>
   </section>
 
-  <section>
+  <!-- Обе секции внутренние: в клиентской сборке (meta.client) удаляются целиком. -->
+  <section id="sec-insights">
     <div class="eyebrow"><h2>Что требует внимания</h2>
       <span class="hint">считается по выбранному периоду и каналам</span></div>
     <div class="insights" id="insights"></div>
   </section>
 
-  <section>
+  <section id="sec-meta">
     <div class="card meta" id="meta"></div>
   </section>
 </div>
@@ -931,6 +932,8 @@ function renderGoals(cur, byCh){
 
 /* ─── диагностика ─────────────────────────────────────────────────────────── */
 function renderInsights(cur, byCh, camps){
+  const box = document.getElementById('insights');
+  if (!box) return;              // клиентская сборка: секции нет
   const out = [];
   const add = (sev, t, p) => out.push({sev, t, p});
 
@@ -1002,7 +1005,7 @@ function renderInsights(cur, byCh, camps){
   const order = {crit:0, warn:1, ok:2};
   out.sort((a, b) => order[a.sev] - order[b.sev]);
   const label = {crit:'важно', warn:'внимание', ok:'хорошо'};
-  document.getElementById('insights').innerHTML = out.length ? out.map(i =>
+  box.innerHTML = out.length ? out.map(i =>
     `<div class="card ins ${i.sev}"><div class="t"><span class="sev">${label[i.sev]}</span>${esc(i.t)}</div>
      <p>${i.p}</p></div>`).join('')
     : `<div class="card ins"><div class="t">Ничего критичного</div>
@@ -1011,8 +1014,10 @@ function renderInsights(cur, byCh, camps){
 
 /* ─── подвал ──────────────────────────────────────────────────────────────── */
 function renderMeta(){
+  const box = document.getElementById('meta');
+  if (!box) return;              // клиентская сборка: секции нет
   const notes = (DATA.meta.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
-  document.getElementById('meta').innerHTML = `
+  box.innerHTML = `
     <div><h3>Откуда данные</h3>
       <ul>
         <li>Показы, клики, расход — кабинеты Директа, Авито и ВК.</li>
@@ -1075,6 +1080,12 @@ function buildMetricSwitch(){
     tg.textContent = state.dayTable ? 'скрыть таблицу' : 'показать таблицей';
   });
 }
+
+// Клиентская сборка: внутренние секции убираем из документа, а не прячем стилем —
+// в исходнике страницы их тоже быть не должно.
+if (DATA.meta.client) ['sec-insights', 'sec-meta'].forEach(id => {
+  const s = document.getElementById(id); if (s) s.remove();
+});
 
 buildTop();
 buildMetricSwitch();
