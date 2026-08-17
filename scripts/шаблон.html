@@ -381,14 +381,14 @@ const DATA = /*__ДАННЫЕ__*/;
 /* ─── справочники ──────────────────────────────────────────────────────────
    Куда ведёт каждая кнопка лендинга — из карты целей проекта.               */
 const GOAL_DEST = {
-  "Клик - 1 экран":            "Ozon · Ice — кнопка «Купить», первый экран",
-  "Клик - 3 экран":            "Ozon · Ice — кнопка «Купить», третий экран",
-  "Клик - блок выбора парфюма":"Ozon · 1926 / Sport / Ice — блок «Все коллекции»",
-  "Клик - все ароматы на Ozon":"Ozon · подборка бренда",
-  "Клик - Ozon":               "Ozon · подборка, ссылка в футере",
-  "Клик - wildberries":        "Wildberries · карточка",
-  "Клик - Магнит косметик":    "Магнит Косметик · приложение",
-  "Клик - Золотое яблоко":     "Золотое Яблоко · страница бренда",
+  "Клик - 1 экран":            {btn:'«Купить» на первом экране',       dest:'Ozon · Ice'},
+  "Клик - 3 экран":            {btn:'«Купить» на третьем экране',      dest:'Ozon · Ice'},
+  "Клик - блок выбора парфюма":{btn:'«Подробнее» в блоке коллекций',   dest:'Ozon · 1926 / Sport / Ice'},
+  "Клик - все ароматы на Ozon":{btn:'«Смотреть все ароматы на OZON»',  dest:'Ozon · подборка бренда'},
+  "Клик - Ozon":               {btn:'ссылка «Ozon» в футере',          dest:'Ozon · подборка бренда'},
+  "Клик - wildberries":        {btn:'ссылка «Wildberries» в футере',   dest:'Wildberries · карточка'},
+  "Клик - Магнит косметик":    {btn:'ссылка «Магнит Косметик»',        dest:'Магнит Косметик · приложение'},
+  "Клик - Золотое яблоко":     {btn:'ссылка «Золотое Яблоко»',         dest:'Золотое Яблоко · страница бренда'},
 };
 const CH = {}; DATA.channels.forEach(c => CH[c.key] = c);
 const CHCOLOR = k => getComputedStyle(document.documentElement).getPropertyValue('--ch-' + k).trim();
@@ -411,6 +411,10 @@ const plural = (v, one, few, many) => {
 };
 const ru = iso => { const [y, m, d] = iso.split('-'); return d + '.' + m; };
 const ruFull = iso => { const [y, m, d] = iso.split('-'); return d + '.' + m + '.' + y.slice(2); };
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа',
+                'сентября','октября','ноября','декабря'];
+// В связном тексте дата словами читается лучше цифр: «16 августа», а не «16.08.26»
+const ruWord = iso => { const [y, m, d] = iso.split('-'); return +d + ' ' + MONTHS[+m - 1]; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ─── состояние ───────────────────────────────────────────────────────────── */
@@ -576,19 +580,74 @@ function renderTop(){
 const plVisit = v => plural(v, 'визит', 'визита', 'визитов');
 const plGoal = v => plural(v, 'переход', 'перехода', 'переходов');
 const plDay = v => plural(v, 'день', 'дня', 'дней');
+const of = c => c.of || c.short;   // родительный падеж названия канала
 // «из 31 дня», «из 30 дней» — после «из» нужен родительный падеж, а не именительный
 const plDayOf = v => (v % 10 === 1 && v % 100 !== 11) ? 'дня' : 'дней';
 // Одна единица на всю колонку: «5,3 / 107 тыс» читается, «5 346 / 107 тыс» — нет
 const thou = v => (v >= 10000 ? n0(Math.round(v / 1000)) : n1(Math.round(v / 100) / 10));
 
-/** Самая дешёвая кампания периода. Меньше пяти переходов — статистика ещё случайная. */
-function byCpa(camps){
-  return camps.filter(r => !r.mp && r.goals >= 5 && r.cost > 0)
-              .map(r => ({r, cpa: r.cost / r.goals}))
-              .sort((a, b) => a.cpa - b.cpa);
+/** Каналы по цене перехода. В тексте для клиента говорим каналами, а не кампаниями:
+    названия кампаний ему ничего не говорят и не подсказывают, к чему относятся.
+    Меньше пяти переходов — статистика ещё случайная, такой канал в выводы не берём. */
+function byCpa(byCh){
+  return DATA.channels.filter(c => state.ch.has(c.key))
+    .map(c => ({c, a: byCh.get(c.key) || blank()}))
+    .filter(x => x.a.goals >= 5 && x.a.cost > 0)
+    .map(x => ({c: x.c, a: x.a, cpa: x.a.cost / x.a.goals}))
+    .sort((a, b) => a.cpa - b.cpa);
 }
 
-function renderSummary(cur, prev, camps){
+/** Факты для клиента: считаются из данных, поэтому не устаревают между сборками.
+    Кандидатов больше, чем мест: показываем первые три, которые набрали значимые цифры. */
+function facts(cur, byCh, byDay, camps){
+  const out = [];
+
+  if (cur.goals && cur.visits) {
+    const each = Math.round(cur.visits / cur.goals);
+    out.push(`Переходом на маркетплейс заканчивается каждый <b>${each}-й</b> визит.`);
+  }
+
+  if (cur.goals) {
+    const top = cur.g.map((v, i) => ({v, i})).sort((a, b) => b.v - a.v)[0];
+    if (top && top.v) {
+      const g = GOAL_DEST[DATA.goals[top.i].name] || {};
+      const label = g.btn || DATA.goals[top.i].name.replace('Клик - ', '');
+      out.push(`Самая популярная кнопка — ${esc(label)}: <b>${pct(top.v, cur.goals, 0)}</b> всех
+        переходов${g.dest ? `, они уходят на ${esc(g.dest)}` : ''}.`);
+    }
+  }
+
+  let best = null;
+  byDay.forEach((a, d) => { if (!best || a.goals > best.a.goals) best = {d, a}; });
+  if (best && best.a.goals >= 5)
+    out.push(`Лучший день — <b>${ruWord(best.d)}</b>: ${n0(best.a.goals)}
+      ${plGoal(best.a.goals)} при расходе ${money(best.a.cost)}.`);
+
+  const cr = DATA.channels.filter(c => state.ch.has(c.key))
+    .map(c => ({c, a: byCh.get(c.key) || blank()}))
+    .filter(x => x.a.visits >= 100 && x.a.goals > 0)
+    .map(x => ({c: x.c, r: x.a.goals / x.a.visits, a: x.a}))
+    .sort((a, b) => b.r - a.r);
+  if (cr.length > 1) {
+    const hi = cr[0], lo = cr[cr.length - 1], k = hi.r / lo.r;
+    if (k >= 1.5) out.push(`Визит из ${esc(of(hi.c))} доходит до маркетплейса
+      в <b>${n1(k)} ${plural(Math.round(k * 10) / 10, 'раз', 'раза', 'раз')}</b> чаще,
+      чем из ${esc(of(lo.c))}: ${pct(hi.a.goals, hi.a.visits, 1)} против ${pct(lo.a.goals, lo.a.visits, 1)}.`);
+  }
+
+  const bo = DATA.channels.filter(c => state.ch.has(c.key))
+    .map(c => ({c, a: byCh.get(c.key) || blank()}))
+    .filter(x => x.a.visits >= 100)
+    .map(x => ({c: x.c, b: x.a.bounceSum / x.a.visits}))
+    .sort((a, b) => a.b - b.b);
+  if (bo.length > 1 && bo[bo.length - 1].b - bo[0].b >= 10)
+    out.push(`Меньше всего отказов у ${esc(of(bo[0].c))} — <b>${n1(bo[0].b)} %</b>
+      против ${n1(bo[bo.length - 1].b)} % у ${esc(of(bo[bo.length - 1].c))}.`);
+
+  return out.slice(0, 3);
+}
+
+function renderSummary(cur, prev, camps, byCh, byDay){
   const days = daysBetween(state.from, state.to);
   const parts = [];
 
@@ -606,20 +665,20 @@ function renderSummary(cur, prev, camps){
     parts.push(s + '.');
   }
 
-  const list = byCpa(camps);
+  const list = byCpa(byCh);
   if (list.length) {
     const best = list[0], worst = list[list.length - 1];
-    let s = `Дешевле всего переходы даёт «${esc(best.r.name)}» — <b>${money2(best.cpa)}</b> за переход`;
-    if (list.length > 1 && worst.cpa > best.cpa * 2.5)
-      s += `, дороже всего «${esc(worst.r.name)}» — <b>${money2(worst.cpa)}</b>`;
+    let s = `Дешевле всего переходы приходят из ${esc(of(best.c))} — <b>${money2(best.cpa)}</b> за переход`;
+    if (list.length > 1 && worst.cpa > best.cpa * 2)
+      s += `, дороже всего из ${esc(of(worst.c))} — <b>${money2(worst.cpa)}</b>`;
     parts.push(s + '.');
   }
 
-  const note = DATA.note && DATA.note.items && DATA.note.items.length ? DATA.note : null;
+  const seen = facts(cur, byCh, byDay, camps);
   document.getElementById('summary').innerHTML =
     parts.map(p => `<p>${p}</p>`).join('') +
-    (note ? `<div class="sum-note"><h3>${esc(note.title)}</h3><ul>` +
-      note.items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul></div>' : '') +
+    (seen.length ? `<div class="sum-note"><h3>Что заметно в цифрах</h3><ul>` +
+      seen.map(i => `<li>${i}</li>`).join('') + '</ul></div>' : '') +
     `<div class="sum-cap">Все суммы — без НДС${DATA.meta.vat ? ` (ставка ${DATA.meta.vat.rate} %)` : ''}.
       Воронка заканчивается переходом на маркетплейс: что было дальше, видно только в кабинетах Ozon и WB.</div>`;
   document.getElementById('sumhint').textContent = 'считается по выбранному периоду и каналам';
@@ -1070,7 +1129,7 @@ function renderGoals(cur, byCh){
         fill:`var(--ch-${c.key})`}, s);
       seg.addEventListener('mousemove', e => showTip(e, tipRows(r.g.name,
         chs.map(cc => ({l:cc.short, c:CHCOLOR(cc.key), v:n0((byCh.get(cc.key) || blank()).g[r.i])}))
-          .concat([{l:GOAL_DEST[r.g.name] || '', v:''}]),
+          .concat([{l:(GOAL_DEST[r.g.name] || {}).dest || '', v:''}]),
         {l:'всего по цели', v:n0(r.v)})));
       seg.addEventListener('mouseleave', hideTip);
       acc += v;
@@ -1210,7 +1269,7 @@ function render(){
   const byDay = aggBy(state.from, state.to, state.ch, r => r.d, r => r.d);
   const camps = campaigns(state.from, state.to, state.ch);
 
-  renderSummary(cur, prev, camps);
+  renderSummary(cur, prev, camps, byCh, byDay);
   renderPlan(cur);
   renderKpis(cur, prev, byDay);
   renderFunnel(cur, byCh);

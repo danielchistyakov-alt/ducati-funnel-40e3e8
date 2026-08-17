@@ -47,7 +47,6 @@ COST_BASE = {
     "vk": "без НДС",       # предположение: в кабинете ВК суммы без НДС. Сверить с актом eLama
 }
 PLAN_FILE = "план.json"    # плановые бюджеты и ориентиры, правится руками
-NOTE_FILE = "резюме.md"    # ручная приписка «что меняем», попадает в блок «Коротко»
 
 # utm_campaign Авито → имя кампании в кабинете. Разметку ставим руками, поэтому
 # соответствие тоже руками; всё несопоставленное дашборд покажет отдельной строкой.
@@ -57,11 +56,12 @@ AVITO_UTM = {"moto": "мотолюбители", "moto_kw": "мотолюбит�
 # У них по определению нет визитов — считать это «потерей» нельзя.
 MARKETPLACE_TRAFFIC = {"продажи на маркетплейсах от 11.08.26"}
 
+# «of» — родительный падеж для связного текста: «дешевле всего переходы из Директа»
 CHANNELS = [
-    {"key": "direct", "name": "Яндекс Директ", "short": "Директ"},
-    {"key": "avito", "name": "Авито Реклама", "short": "Авито"},
-    {"key": "vk", "name": "VK Реклама", "short": "ВК"},
-    {"key": "other", "name": "Без рекламы", "short": "Без рекламы"},
+    {"key": "direct", "name": "Яндекс Директ", "short": "Директ", "of": "Директа"},
+    {"key": "avito", "name": "Авито Реклама", "short": "Авито", "of": "Авито"},
+    {"key": "vk", "name": "VK Реклама", "short": "ВК", "of": "ВК"},
+    {"key": "other", "name": "Без рекламы", "short": "Без рекламы", "of": "трафика без рекламы"},
 ]
 ADV_ENGINE = {"ya_direct": "direct", "ya_undefined": "direct",
               "avitoads": "avito", "vk_ads": "vk"}
@@ -128,21 +128,6 @@ def read_plan() -> dict:
         "cpa": money(p.get("ориентир цены перехода")),
         "source": p.get("основа сумм", "без НДС"),
     }
-
-
-def read_note() -> dict:
-    """Ручная приписка для клиента: заголовок «# …» и пункты «- …»."""
-    path = near(NOTE_FILE)
-    if not path.exists():
-        return {}
-    title, items = "Что меняем", []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line.startswith("#"):
-            title = line.lstrip("#").strip()
-        elif line.startswith(("- ", "* ")):
-            items.append(line[2:].strip())
-    return {"title": title, "items": items} if items else {}
 
 
 # ─────────────────────────────  Метрика: что было после клика  ─────────────────
@@ -325,7 +310,6 @@ def collect(d1: str, d2: str, client: bool = False) -> dict:
         },
         "channels": CHANNELS,
         "plan": read_plan(),
-        "note": read_note(),
         "goals": met["goals"],
         "days": met["days"],
         "site": met["site"],
