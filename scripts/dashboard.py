@@ -21,11 +21,11 @@
   ВК     — по utm_campaign, там лежит id группы объявлений.
 """
 
-import html
 import importlib.util
 import json
 import re
 import sys
+import urllib.parse
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -65,6 +65,22 @@ CHANNELS = [
 ]
 ADV_ENGINE = {"ya_direct": "direct", "ya_undefined": "direct",
               "avitoads": "avito", "vk_ads": "vk"}
+
+
+def utm_channel(src: str) -> str:
+    """Канал по utm_source — запасной вариант, когда Метрика не опознала рекламную систему.
+
+    Группы ВК, заведённые вручную, размечены `utm_source=vk`, а не `vk_ads`, и в
+    `lastsignAdvEngine` не попадают: без этой развязки их визиты уезжают в «без рекламы».
+    """
+    s = (src or "").lower()
+    if s.startswith("vk"):
+        return "vk"
+    if s.startswith("avito"):
+        return "avito"
+    if s in ("yandex", "ya", "direct", "yandex_direct", "yd"):
+        return "direct"
+    return "other"
 
 
 def load(name: str):
@@ -142,14 +158,15 @@ def metrika_data(d1: str, d2: str) -> dict:
                   dimensions=dimensions, limit=limit, accuracy="full", **extra)
         return d["data"]
 
-    # 1. Канал × день — основа воронки. AdvEngine отдаёт устойчивые id, а не подписи.
+    # 1. Канал × день — основа воронки. AdvEngine отдаёт устойчивые id, а не подписи,
+    # но видит только то, что Метрика опознала как рекламу: остальное разбираем по utm_source.
     days = []
-    for it in rows("ym:s:date,ym:s:lastsignAdvEngine", f"{base},{gm}"):
-        day, eng = it["dimensions"]
+    for it in rows("ym:s:date,ym:s:lastsignAdvEngine,ym:s:UTMSource", f"{base},{gm}"):
+        day, eng, src = it["dimensions"]
         visits, users, bounce, dur = it["metrics"][:4]
         days.append({
             "d": day.get("name"),
-            "ch": ADV_ENGINE.get(eng.get("id"), "other"),
+            "ch": ADV_ENGINE.get(eng.get("id")) or utm_channel(src.get("name")),
             "visits": f(visits), "users": f(users),
             "bounce": f(bounce), "dur": f(dur),
             "g": [f(v) for v in it["metrics"][4:]],
@@ -221,9 +238,35 @@ def avito_rows(d1: str, d2: str) -> list:
     return out
 
 
+_VK_GROUPS = []
+
+
+def vk_groups() -> list:
+    """Группы ВК с их разметкой. Кэш: за сборку список нужен и статистике, и склейке с Метрикой."""
+    global _VK_GROUPS
+    if not _VK_GROUPS:
+        v = load("vk")
+        _VK_GROUPS = v.api("/api/v2/ad_groups.json", limit=50, fields="id,name,utm").get("items", [])
+    return _VK_GROUPS
+
+
+def vk_utm_map() -> dict:
+    """utm_campaign → id группы. У ВК разметка задаётся на группе, и в разных кампаниях
+    она разная: у старых там id группы, у заведённых руками — метки вроде `ice_gift`.
+    Без этой карты одна и та же группа двоится: расход отдельно, визиты отдельно."""
+    out = {}
+    for g in vk_groups():
+        gid = str(g["id"])
+        out[gid] = gid
+        camp = urllib.parse.parse_qs(g.get("utm") or "").get("utm_campaign")
+        if camp:
+            out[camp[0].strip()] = gid
+    return out
+
+
 def vk_rows(d1: str, d2: str) -> list:
     v = load("vk")
-    groups = v.objects("ad_groups")
+    groups = vk_groups()
     if not groups:
         return []
     names = {str(g["id"]): g.get("name", "") for g in groups}
@@ -259,6 +302,12 @@ def collect(d1: str, d2: str, client: bool = False) -> dict:
     ads = (guarded("Директ", lambda: direct_rows(d1, d2))
            + guarded("Авито", lambda: avito_rows(d1, d2))
            + guarded("ВК", lambda: vk_rows(d1, d2)))
+
+    # Приводим ключ кампании ВК к id группы: в Метрике лежит то, что стоит в utm_campaign
+    vk_map = guarded("ВК: разметка", vk_utm_map) or {}
+    for r in met["site"]:
+        if r["ch"] == "vk":
+            r["key"] = vk_map.get(r["key"], r["key"])
 
     for r in ads:
         r["mp"] = 1 if norm(r["camp"]) in MARKETPLACE_TRAFFIC else 0
