@@ -5,7 +5,7 @@
 
   1. Постоянный токен eLama для конкретного клиентского кабинета:
      VK_TOKEN=...                 # также поддерживаются VK_ADS_TOKEN и access_token
-     agency_client_name=...       # логин вида 7a67ef9616@agency_client
+     agency_client_name=...       # логин вида 0000000000@agency_client
 
      Токен уже выпущен eLama по Agency Client Credentials Grant. Для API-запросов
      достаточно токена; agency_client_name нужен команде check для сверки кабинета.
@@ -29,6 +29,17 @@
     python3 vk.py stats 2026-08-07 2026-08-13    # сводка за период
     python3 vk.py days  2026-08-07 2026-08-13    # разбивка по дням
 
+Списки поисковых фраз (контекстный таргетинг), ресурс /api/v3/search_phrases:
+    python3 vk.py phrases                        # какие списки есть
+    python3 vk.py phrases 7454077                # фразы и стоп-фразы списка
+    python3 vk.py phrases 7454077 --csv файл.csv # выгрузить в файл
+    python3 vk.py phrases-new "Имя" фразы.json   # черновик, с --да создаст
+    python3 vk.py phrases-set 7454077 фразы.json # заменить содержимое, тоже с --да
+    python3 vk.py phrases-rm 7454077 --да        # удалить список
+
+Аудиторию поверх списка фраз API не собирает: id списка не совпадает с object_id
+в relations сегмента. Сегмент заводится в кабинете, в скрипты передаётся его id.
+
 Произвольные запросы и создание объектов:
     python3 vk.py get  /api/v2/ad_plans.json limit=5
     python3 vk.py post /api/v2/ad_plans.json кампания.json          # только показать, что уйдёт
@@ -38,6 +49,7 @@
 Создание идёт от лица кабинета и тратит его бюджет — сверяйте тело перед --да.
 """
 
+import gzip
 import json
 import sys
 import time
@@ -121,6 +133,14 @@ def token(plain: bool = False) -> str:
     return _tok[key]["t"]
 
 
+def unpack(raw: bytes):
+    """Ресурс /api/v3/ отвечает gzip даже без Accept-Encoding — json.load на нём падает."""
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    text = raw.decode("utf-8", "replace")
+    return json.loads(text) if text.strip() else {}
+
+
 def api(path: str, quiet: bool = False, plain: bool = False, **params):
     url = f"{BASE}{path}"
     if params:
@@ -128,7 +148,7 @@ def api(path: str, quiet: bool = False, plain: bool = False, **params):
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token(plain)}"})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            return json.load(r)
+            return unpack(r.read())
     except urllib.error.HTTPError as e:
         msg = e.read().decode("utf-8", "replace")[:400]
         if quiet:
@@ -183,8 +203,7 @@ def post(path: str, payload, method: str = "POST"):
                                           "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
-            text = r.read().decode("utf-8", "replace")
-            return json.loads(text) if text.strip() else {"status": r.status}
+            return unpack(r.read()) or {"status": r.status}
     except urllib.error.HTTPError as e:
         # ВК кладёт разбор ошибки по полям в тело ответа — печатаем целиком, оно полезное
         sys.exit(f"HTTP {e.code} на {method} {path}:\n"
@@ -231,6 +250,78 @@ def show(rows: list, head: list) -> None:
 
 def fmt(x: float, dec: int = 2) -> str:
     return f"{x:,.{dec}f}".replace(",", " ")
+
+
+# ─── списки поисковых фраз (контекстный таргетинг) ──────────────────────────
+# Живут отдельно от остального ремаркетинга: ресурс /api/v3/search_phrases.json,
+# не /api/v2/remarketing/*. Требуют заголовок X-Trg-User-Id и отвечают gzip.
+
+SP = "/api/v3/search_phrases"
+_uid = {}
+
+
+def user_id() -> int:
+    if not _uid:
+        _uid["id"] = api("/api/v2/user.json")["id"]
+    return _uid["id"]
+
+
+def sp_send(path: str, method: str, body: bytes = b"", ctype: str = "application/json"):
+    headers = {"Authorization": f"Bearer {token()}", "X-Trg-User-Id": str(user_id())}
+    if body:
+        headers["Content-Type"] = ctype
+    req = urllib.request.Request(f"{BASE}{path}", data=body or None, method=method,
+                                 headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return unpack(r.read()) or {"status": r.status}
+    except urllib.error.HTTPError as e:
+        raw = e.read()
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        sys.exit(f"HTTP {e.code} на {method} {path}:\n"
+                 f"{raw.decode('utf-8', 'replace')[:1200]}{hint(e.code)}")
+
+
+def sp_read(src) -> dict:
+    """Читает список фраз из файла.
+
+    .json — {"phrases": [...], "stop_phrases": [...], "expires": "12d"}.
+    Текст — фразы построчно или через запятую; всё после строки «стоп:» или «---»
+    считается стоп-фразами. Строки, начинающиеся с #, пропускаются.
+    """
+    text = Path(src).read_text(encoding="utf-8")
+    if str(src).endswith(".json"):
+        d = json.loads(text)
+        return {"phrases": d.get("phrases", []),
+                "stop_phrases": d.get("stop_phrases", []),
+                "expires": d.get("expires", "12d")}
+
+    phrases, stops, cur = [], [], None
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.lower().rstrip(":") in ("стоп", "стоп-фразы", "---"):
+            cur = stops
+            continue
+        (stops if cur is stops else phrases).extend(
+            x.strip() for x in line.split(",") if x.strip())
+    return {"phrases": phrases, "stop_phrases": stops, "expires": "12d"}
+
+
+def sp_body(d: dict) -> bytes:
+    return json.dumps({"phrases": d["phrases"], "stop_phrases": d["stop_phrases"],
+                       "expires": d.get("expires", "12d")}, ensure_ascii=False).encode("utf-8")
+
+
+def sp_preview(name: str, d: dict) -> None:
+    print(f"Список «{name}»: {len(d['phrases'])} фраз, {len(d['stop_phrases'])} стоп-фраз, "
+          f"срок {d.get('expires', '12d')}")
+    print("  фразы:", ", ".join(d["phrases"][:8]) + (" …" if len(d["phrases"]) > 8 else ""))
+    if d["stop_phrases"]:
+        print("  стоп: ", ", ".join(d["stop_phrases"][:8]) +
+              (" …" if len(d["stop_phrases"]) > 8 else ""))
 
 
 def main() -> None:
@@ -341,6 +432,59 @@ def main() -> None:
         print(f"ИТОГО  расход {fmt(sp)} ₽  показы {fmt(sh, 0)}  клики {fmt(cl, 0)}" +
               (f"  CTR {cl / sh * 100:.2f}%  CPC {fmt(sp / cl)} ₽  CPM {fmt(sp / sh * 1000)} ₽"
                if sh and cl else ""))
+
+    elif cmd == "phrases":
+        if len(args) < 2:
+            d = api(f"{SP}.json")
+            rows = [[i.get("id"), i.get("status", ""), i.get("phrases_cnt", 0),
+                     i.get("stop_phrases_cnt", 0), i.get("errors_cnt", 0), i.get("name", "")]
+                    for i in d.get("items", [])]
+            show(rows, ["id", "статус", "фраз", "стоп", "ошибок", "имя"])
+            return
+        sid = args[1]
+        d = api(f"{SP}/{sid}.json")
+        items = d.get("items", [])
+        if "--csv" in args:
+            dst = args[args.index("--csv") + 1]
+            Path(dst).write_text(
+                "phrase;expires\n" + "\n".join(f'{i["phrase"]};{i.get("expires", "")}'
+                                                for i in items), encoding="utf-8")
+            print(f"{len(items)} фраз выгружено в {dst}")
+            return
+        for i in items:
+            print(i["phrase"])
+        stops = d.get("common_stop_phrases") or []
+        if stops:
+            print("\nстоп:")
+            print(", ".join(stops))
+        print(f"\nвсего {len(items)} фраз, {len(stops)} стоп-фраз, "
+              f"ошибок разбора {d.get('errors_cnt', 0)}")
+
+    elif cmd in ("phrases-new", "phrases-set"):
+        if len(args) < 3:
+            sys.exit('Нужны имя/id и файл: phrases-new "Ключи — мужчины" фразы.json [--да]')
+        d = sp_read(args[2])
+        if not d["phrases"]:
+            sys.exit(f"В {args[2]} не нашлось ни одной фразы.")
+        sp_preview(args[1], d)
+        if "--да" not in args:
+            print("\nЭто черновик — ничего не отправлено. Повторите с --да.")
+            return
+        if cmd == "phrases-new":
+            path = f"{SP}.json?" + urllib.parse.urlencode({"name": args[1]})
+            r = sp_send(path, "POST", sp_body(d))
+        else:
+            r = sp_send(f"{SP}/{int(args[1])}.json", "PUT", sp_body(d))
+        print("\nОтвет:", json.dumps(r, ensure_ascii=False, indent=2))
+
+    elif cmd == "phrases-rm":
+        if len(args) < 2:
+            sys.exit("Нужен id: phrases-rm 7454077 [--да]")
+        if "--да" not in args:
+            print(f"Удалить список {args[1]}? Повторите с --да.")
+            return
+        print(json.dumps(sp_send(f"{SP}/{int(args[1])}.json", "DELETE"),
+                         ensure_ascii=False, indent=2))
 
     else:
         sys.exit(__doc__)
