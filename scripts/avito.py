@@ -12,6 +12,7 @@
     python3 avito.py campaigns                     # список кампаний
     python3 avito.py stats 2026-08-07 2026-08-13   # статистика по кампаниям за период
     python3 avito.py days  2026-08-07 2026-08-13   # то же, с разбивкой по дням
+    python3 avito.py groups 2026-08-07 2026-08-13  # по группам внутри кампаний
 """
 
 import json
@@ -123,6 +124,31 @@ def main() -> None:
         for c in campaigns():
             print(f"{c.get('id'):>12}  {c.get('status',''):<16} {c.get('paymentModel',''):<5} "
                   f"{c.get('name','')}")
+
+    elif cmd == "groups":
+        # Показы и клики по группам. Целей здесь нет — они только в Метрике,
+        # поэтому у групп должны быть разные utm, иначе конверсии не развести.
+        if len(args) < 3:
+            sys.exit("Нужны две даты: groups 2026-08-07 2026-08-13")
+        d1, d2 = args[1], args[2]
+        rows = []
+        all_groups = api(f"/ads/v1/account/{acc()}/groups",
+                         {"filter": {}, "limit": 100, "page": 1}).get("groups", [])
+        for c in campaigns():
+            # groupIDs обязателен — пустой список эндпоинт не принимает
+            ids = [g["id"] for g in all_groups if g.get("campaignID") == c["id"]]
+            if not ids:
+                continue
+            d = api(f"/ads/v1/account/{acc()}/campaigns/{c['id']}/groups/stats",
+                    {"dateFrom": d1, "dateTo": d2, "groupIDs": ids})
+            for g in d.get("groups", []):
+                t = g.get("totalData", {})
+                sp, v, cl = money(t), t.get("views", 0), t.get("clicks", 0)
+                rows.append([c.get("name", "")[:22], g.get("name", "")[:22],
+                             f"{sp:,.2f}".replace(",", " "), f"{v:,}".replace(",", " "),
+                             str(cl), f"{cl / v * 100:.2f} %" if v else "—",
+                             f"{sp / cl:.2f}" if cl else "—"])
+        show(rows, ["Кампания", "Группа", "Расход, ₽", "Показы", "Клики", "CTR", "CPC, ₽"])
 
     elif cmd in ("stats", "days"):
         if len(args) < 3:
