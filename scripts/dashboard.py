@@ -26,7 +26,7 @@ import json
 import re
 import sys
 import urllib.parse
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent   # рядом лежат metrika.py, direct.py, avito.py, vk.py
@@ -110,6 +110,20 @@ def net(cost: float, channel: str) -> float:
     return cost / (1 + VAT_RATE) if COST_BASE.get(channel) == "с НДС" else cost
 
 
+def date_chunks(d1: str, d2: str, size: int = 14):
+    """Период кусками по две недели.
+
+    Метрика на длинном интервале с accuracy=full отвечает «Query is too complicated»
+    и роняет сборку. Все выборки идут с разбивкой по дням, поэтому склейка кусков
+    точная: строки за разные дни не пересекаются и не дублируются.
+    """
+    a, end = date.fromisoformat(d1), date.fromisoformat(d2)
+    while a <= end:
+        b = min(a + timedelta(days=size - 1), end)
+        yield a.isoformat(), b.isoformat()
+        a = b + timedelta(days=1)
+
+
 def last_closed_day() -> str:
     """Последние закончившиеся сутки по Москве.
 
@@ -152,9 +166,12 @@ def metrika_data(d1: str, d2: str) -> dict:
     base = "ym:s:visits,ym:s:users,ym:s:bounceRate,ym:s:avgVisitDurationSeconds"
 
     def rows(dimensions: str, metrics: str, limit: int = 10000, **extra) -> list:
-        d = m.api("/stat/v1/data", ids=m.COUNTER_ID, date1=d1, date2=d2, metrics=metrics,
-                  dimensions=dimensions, limit=limit, accuracy="full", **extra)
-        return d["data"]
+        out = []
+        for a, b in date_chunks(d1, d2):
+            d = m.api("/stat/v1/data", ids=m.COUNTER_ID, date1=a, date2=b, metrics=metrics,
+                      dimensions=dimensions, limit=limit, accuracy="full", **extra)
+            out += d["data"]
+        return out
 
     # 1. Канал × день — основа воронки. AdvEngine отдаёт устойчивые id, а не подписи,
     # но видит только то, что Метрика опознала как рекламу: остальное разбираем по utm_source.
