@@ -582,7 +582,8 @@ const plGoal = v => plural(v, 'переход', 'перехода', 'перех�
 const plDay = v => plural(v, 'день', 'дня', 'дней');
 const of = c => c.of || c.short;   // родительный падеж названия канала
 // «из 31 дня», «из 30 дней» — после «из» нужен родительный падеж, а не именительный
-const plDayOf = v => (v % 10 === 1 && v % 100 !== 11) ? 'дня' : 'дней';
+const plDays = v => { const a = v % 10, b = v % 100;
+  return (b > 10 && b < 20) ? 'дней' : a === 1 ? 'день' : (a >= 2 && a <= 4) ? 'дня' : 'дней'; };
 // Одна единица на всю колонку: «5,3 / 107 тыс» читается, «5 346 / 107 тыс» — нет
 const thou = v => (v >= 10000 ? n0(Math.round(v / 1000)) : n1(Math.round(v / 100) / 10));
 
@@ -693,19 +694,28 @@ function renderPlan(cur){
     document.querySelector('.summary-grid').style.gridTemplateColumns = '1fr'; return; }
 
   const chs = DATA.channels.filter(c => state.ch.has(c.key) && p.budget[c.key] != null);
+  const keys = new Set(chs.map(c => c.key));
   const budget = chs.reduce((s, c) => s + p.budget[c.key], 0) || p.budget['всего'] || 0;
-  const last = D1 < p.to ? D1 : p.to;            // последний день, за который есть данные
+
+  // Кампания живёт дольше дат медиаплана: ВК встал 31.08, Директ и Авито крутились
+  // дальше. Поэтому период карточки ведём по факту — от старта до последнего дня,
+  // когда в кабинетах был расход; «по» из плана осталась справочной датой.
+  const spentDays = ALLDATES.filter(d => d >= p.from &&
+    DATA.ads.some(r => r.d === d && keys.has(r.ch) && r.cost > 0));
+  const last = spentDays.length ? spentDays[spentDays.length - 1] : p.from;
   const spentBy = k => DATA.ads.reduce((s, r) =>
     s + (r.ch === k && inRange(r.d, p.from, last) ? r.cost : 0), 0);
   const spent = chs.reduce((s, c) => s + spentBy(c.key), 0);
 
-  const total = daysBetween(p.from, p.to), gone = daysBetween(p.from, last);
-  const tail = ALLDATES.filter(d => inRange(d, p.from, last)).slice(-7);
+  // Темп — по последним семи дням с откруткой: паузы в середине не должны его размывать.
+  const tail = spentDays.slice(-7);
   const pace = tail.length
-    ? DATA.ads.reduce((s, r) => s + (state.ch.has(r.ch) && tail.includes(r.d) ? r.cost : 0), 0) / tail.length
+    ? DATA.ads.reduce((s, r) => s + (keys.has(r.ch) && tail.includes(r.d) ? r.cost : 0), 0) / tail.length
     : 0;
-  const left = Math.max(0, total - gone);
-  const forecast = spent + pace * left;
+  // Период кончается сегодняшним днём открутки, поэтому «прошло N из N» и прогноз
+  // к концу периода выродились бы в тавтологию — вместо них остаток и на сколько его хватит.
+  const rest = budget - spent;
+  const enough = pace > 0 && rest > 0 ? Math.round(rest / pace) : 0;
 
   // Метку со статусом темпа не выводим: прогноз к концу периода говорит то же самое,
   // но без окраски в тревогу — решение от 17.08.
@@ -716,16 +726,15 @@ function renderPlan(cur){
     : {cls:'crit', text:`выше ориентира ${money2(target)}`};
 
   box.innerHTML = `
-    <h3>Бюджет · ${ruFull(p.from)} — ${ruFull(p.to)}</h3>
+    <h3>Бюджет · ${ruFull(p.from)} — ${ruFull(last)}</h3>
     <div class="big">${money(spent)} <span>из ${money(budget)}</span></div>
-    <div class="meter" title="серая метка — где мы были бы при ровном темпе">
+    <div class="meter">
       <i style="width:${Math.min(100, budget ? spent / budget * 100 : 0).toFixed(1)}%; background:var(--accent)"></i>
-      <u style="left:${Math.min(100, gone / total * 100).toFixed(1)}%"></u>
     </div>
     <div class="row"><span>израсходовано ${pct(spent, budget, 0)}</span>
-      <b>прошло ${gone} из ${total} ${plDayOf(total)}</b></div>
+      <b>${rest >= 0 ? `осталось ${money(rest)}` : `перерасход ${money(-rest)}`}</b></div>
     <div class="row"><span>темп ${money(pace)} в день</span>
-      <b>к ${ruFull(p.to)} ≈ ${money(forecast)}</b></div>
+      <b>${enough ? `хватит ещё на ${enough} ${plDays(enough)}` : ''}</b></div>
     ${chs.length > 1 ? `<div class="split">` + chs.map(c => {
       const s = spentBy(c.key), b = p.budget[c.key];
       return `<div class="ch">
