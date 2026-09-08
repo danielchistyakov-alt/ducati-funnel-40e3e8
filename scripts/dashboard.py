@@ -4,7 +4,7 @@
 Тянет четыре источника и складывает их в один HTML-файл с зашитыми данными —
 открывается двойным кликом, работает без интернета, ничего не грузит со стороны.
 
-    python3 "Аналитика и скрипты/dashboard.py"                       # с 1 августа по сегодня
+    python3 "Аналитика и скрипты/dashboard.py"                       # со старта по последний закрытый день
     python3 "Аналитика и скрипты/dashboard.py" 2026-08-01 2026-08-17
     python3 "Аналитика и скрипты/dashboard.py" --выход путь.html
     python3 "Аналитика и скрипты/dashboard.py" --артефакт путь.html  # ещё и версия без каркаса
@@ -26,7 +26,7 @@ import json
 import re
 import sys
 import urllib.parse
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent   # рядом лежат metrika.py, direct.py, avito.py, vk.py
@@ -37,6 +37,7 @@ TEMPLATE = next((c for c in (ROOT / "Отчёты" / "Дашборд" / "шаб�
 OUTPUT = ROOT / "Отчёты" / "Дашборд" / "Дашборд — воронка трафика.html"
 
 START = "2026-08-07"  # старт открутки; до этой даты на сайте только тестовые заходы
+MSK = timezone(timedelta(hours=3))   # и кабинеты, и Метрика режут сутки по Москве
 
 # Дашборд везде показывает суммы БЕЗ НДС. Кабинеты отдают расход в разной базе:
 # «с НДС» — делим на 1 + ставка, «без НДС» — берём как есть.
@@ -109,6 +110,31 @@ def net(cost: float, channel: str) -> float:
     return cost / (1 + VAT_RATE) if COST_BASE.get(channel) == "с НДС" else cost
 
 
+def date_chunks(d1: str, d2: str, size: int = 14):
+    """Период кусками по две недели.
+
+    Метрика на длинном интервале с accuracy=full отвечает «Query is too complicated»
+    и роняет сборку. Все выборки идут с разбивкой по дням, поэтому склейка кусков
+    точная: строки за разные дни не пересекаются и не дублируются.
+    """
+    a, end = date.fromisoformat(d1), date.fromisoformat(d2)
+    while a <= end:
+        b = min(a + timedelta(days=size - 1), end)
+        yield a.isoformat(), b.isoformat()
+        a = b + timedelta(days=1)
+
+
+def last_closed_day() -> str:
+    """Последние закончившиеся сутки по Москве.
+
+    Идущий день кабинеты отдают частично: по истории сборок в утренний отчёт
+    попадало 30–50 % его показов, кликов и расхода. На месячном итоге это тонет,
+    а на пресетах «3 дня» и «7 дней» перекашивает и расход, и цену перехода,
+    поэтому дальше этой даты отчёт не заходит.
+    """
+    return (datetime.now(MSK).date() - timedelta(days=1)).isoformat()
+
+
 def near(name: str) -> Path:
     """Файл настроек: в проекте лежит в папке дашборда, в репозитории публикации — у скрипта."""
     return next((c for c in (ROOT / "Отчёты" / "Дашборд" / name, SCRIPTS / name) if c.exists()),
@@ -140,9 +166,12 @@ def metrika_data(d1: str, d2: str) -> dict:
     base = "ym:s:visits,ym:s:users,ym:s:bounceRate,ym:s:avgVisitDurationSeconds"
 
     def rows(dimensions: str, metrics: str, limit: int = 10000, **extra) -> list:
-        d = m.api("/stat/v1/data", ids=m.COUNTER_ID, date1=d1, date2=d2, metrics=metrics,
-                  dimensions=dimensions, limit=limit, accuracy="full", **extra)
-        return d["data"]
+        out = []
+        for a, b in date_chunks(d1, d2):
+            d = m.api("/stat/v1/data", ids=m.COUNTER_ID, date1=a, date2=b, metrics=metrics,
+                      dimensions=dimensions, limit=limit, accuracy="full", **extra)
+            out += d["data"]
+        return out
 
     # 1. Канал × день — основа воронки. AdvEngine отдаёт устойчивые id, а не подписи,
     # но видит только то, что Метрика опознала как рекламу: остальное разбираем по utm_source.
@@ -274,6 +303,9 @@ def vk_rows(d1: str, d2: str) -> list:
 # ─────────────────────────────  Сборка  ────────────────────────────────────────
 
 def collect(d1: str, d2: str, client: bool = False) -> dict:
+    d2 = min(d2, last_closed_day())   # в отчёте только закрытые сутки — иначе цифры не финальные
+    if d1 > d2:
+        sys.exit(f"Нечего собирать: {d1} позже последнего закрытого дня {d2}.")
     notes = []
 
     def guarded(label, fn):
@@ -372,7 +404,7 @@ def main() -> None:
 
     out = Path(opts["--выход"]) if "--выход" in opts else OUTPUT
     d1 = args[0] if args else START
-    d2 = args[1] if len(args) > 1 else date.today().isoformat()
+    d2 = min(args[1], last_closed_day()) if len(args) > 1 else last_closed_day()
 
     client = "--для-клиента" in sys.argv
     print(f"Собираю данные за {d1} … {d2}" + (" (версия для клиента)" if client else ""))
