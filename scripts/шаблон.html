@@ -686,7 +686,7 @@ function renderSummary(cur, prev, camps, byCh, byDay){
 }
 
 /* ─── бюджет и темп ───────────────────────────────────────────────────────── */
-function renderPlan(cur){
+function renderPlan(){
   const box = document.getElementById('planbox');
   const p = DATA.plan || {};
   if (!box) return;
@@ -707,19 +707,14 @@ function renderPlan(cur){
     s + (r.ch === k && inRange(r.d, p.from, last) ? r.cost : 0), 0);
   const spent = chs.reduce((s, c) => s + spentBy(c.key), 0);
 
-  // Темп — по последним семи дням с откруткой: паузы в середине не должны его размывать.
-  const tail = spentDays.slice(-7);
-  const pace = tail.length
-    ? DATA.ads.reduce((s, r) => s + (keys.has(r.ch) && tail.includes(r.d) ? r.cost : 0), 0) / tail.length
-    : 0;
-  // Период кончается сегодняшним днём открутки, поэтому «прошло N из N» и прогноз
-  // к концу периода выродились бы в тавтологию — вместо них остаток и на сколько его хватит.
+  // Отчёт закрывающий: карточка говорит только о том, что уже потрачено. Ни прогноза
+  // к концу периода, ни «хватит ещё на N дней» — кампания кончилась, продлевать нечего.
   const rest = budget - spent;
-  const enough = pace > 0 && rest > 0 ? Math.round(rest / pace) : 0;
-
-  // Метку со статусом темпа не выводим: прогноз к концу периода говорит то же самое,
-  // но без окраски в тревогу — решение от 17.08.
-  const cpa = cur.goals ? cur.cost / cur.goals : 0;
+  const days = daysBetween(p.from, last);
+  // Считаем по периоду самой карточки, а не по выбранному в шапке: иначе клик по
+  // пресету «3 дня» менял бы цифру под заголовком, в котором стоят даты кампании.
+  const own = agg(p.from, last, keys);
+  const cpa = own.goals ? own.cost / own.goals : 0;
   const target = p.cpa;
   const cpaPill = !target || !cpa ? null
     : cpa <= target ? {cls:'ok', text:`ориентир ${money2(target)}`}
@@ -732,9 +727,9 @@ function renderPlan(cur){
       <i style="width:${Math.min(100, budget ? spent / budget * 100 : 0).toFixed(1)}%; background:var(--accent)"></i>
     </div>
     <div class="row"><span>израсходовано ${pct(spent, budget, 0)}</span>
-      <b>${rest >= 0 ? `осталось ${money(rest)}` : `перерасход ${money(-rest)}`}</b></div>
-    <div class="row"><span>темп ${money(pace)} в день</span>
-      <b>${enough ? `хватит ещё на ${enough} ${plDays(enough)}` : ''}</b></div>
+      <b>${rest >= 0 ? `не израсходовано ${money(rest)}` : `перерасход ${money(-rest)}`}</b></div>
+    <div class="row"><span>в среднем ${money(spent / days)} в день</span>
+      <b>${days} ${plDays(days)} кампании</b></div>
     ${chs.length > 1 ? `<div class="split">` + chs.map(c => {
       const s = spentBy(c.key), b = p.budget[c.key];
       return `<div class="ch">
@@ -1279,7 +1274,7 @@ function render(){
   const camps = campaigns(state.from, state.to, state.ch);
 
   renderSummary(cur, prev, camps, byCh, byDay);
-  renderPlan(cur);
+  renderPlan();
   renderKpis(cur, prev, byDay);
   renderFunnel(cur, byCh);
   renderDayChart();
